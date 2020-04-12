@@ -1,22 +1,25 @@
 import argparse
 
-def create_parser():
-    parser = argparse.ArgumentParser(description="Welcome to datawand-lite CLI. Happy coding! :)")
-    subparsers = parser.add_subparsers(dest="subcommand")
-    # subparser for instances
-    parser_init = subparsers.add_parser("instance")
-    parser_init.add_argument(
+welcome_txt = "Welcome to datawand-lite CLI. Happy coding! :)"
+
+def instance_parser():
+    parser = argparse.ArgumentParser(description=welcome_txt)
+    parser.add_argument(
         "action",
-        choices=["create", "list","remove"],
+        choices=["create", "list","remove","activate"],
         help="Provide instance action")
-    parser_init.add_argument("--name", "-n", help="provide instance name")
+    parser.add_argument("--name", "-n", help="provide instance name")
+    return parser
+
+def pipeline_parser():
+    parser = argparse.ArgumentParser(description=welcome_txt)
+    subparsers = parser.add_subparsers(dest="subcommand")
     # subparser for pipelines
     parser_pipeline = subparsers.add_parser("pipeline")
     parser_pipeline.add_argument(
         "action",
         choices=["create","remove","list","show"],
         help='Provide pipeline action')
-    parser_pipeline.add_argument("--instance", "-i", help="provide instance name")
     parser_pipeline.add_argument("--name", "-n", help="provide pipeline name")
     # subparser for experiments
     parser_exp = subparsers.add_parser("experiment")
@@ -24,4 +27,7 @@ def create_parser():
         "action",
         choices=["status", "list","create","remove","run","stop"],
         help="Provide experiment action")
+    # other options
+    _ = subparsers.add_parser("deactivate")
+    _ = subparsers.add_parser("status")
     return parser

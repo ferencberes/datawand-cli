@@ -66,24 +66,30 @@ nb_str = """
  "nbformat_minor": 2
 }
 """
-
+"""
 def extract_base_dir(cursor, instance_name, instance_table):
     base_dir = get_instance_dir(cursor, instance_name, instance_table)
+    num_pipelines, num_experiments = 0, 0
     if base_dir == None:
         print("Invalid instance name. Choose from the instances below:")
         show_table(cursor, instance_table)
     else:
-        base_dir += "/datawand/pipelines"
-        if not os.path.exists(base_dir):
-            os.makedirs(base_dir)
-    return base_dir
+        pipeline_dir = base_dir + "/datawand/pipelines"
+        experiment_dir = base_dir + "/datawand/experiments"
+        for new_dir in [pipeline_dir, experiment_dir]:
+            if not os.path.exists(new_dir):
+                os.makedirs(new_dir)
+        num_pipelines = len(os.listdir(pipeline_dir))
+        num_experiments = len(os.listdir(experiment_dir))
+    return base_dir, num_pipelines, num_experiments
 
 def create_pipeline(cursor, instance_table, instance_name, pipeline_name):
-    base_dir = extract_base_dir(cursor, instance_name, instance_table)
+    base_dir, _, _ = extract_base_dir(cursor, instance_name, instance_table)
+    print(base_dir)
     if base_dir != None:
         template = Template(nb_str)
         rendered = template.render(rel_path="./", pipeline_name=pipeline_name)
-        with open("%s/%s.ipynb" % (base_dir, pipeline_name), 'w') as f:
+        with open("%s/datawand/pipelines/%s.ipynb" % (base_dir, pipeline_name), 'w') as f:
             f.write(rendered)
             
 def remove_pipeline(cursor, instance_table, instance_name, pipeline_name):
@@ -97,12 +103,11 @@ def remove_pipeline(cursor, instance_table, instance_name, pipeline_name):
             print("Invalid pipeline name! Choose from:")
 
 def list_pipelines(cursor, instance_table, instance_name):
-    base_dir = extract_base_dir(cursor, instance_name, instance_table)
+    base_dir, _, _ = extract_base_dir(cursor, instance_name, instance_table)
     if base_dir != None:
-        print(os.listdir(base_dir))
+        print(os.listdir(base_dir+"/datawand/pipelines"))
 
-def handle_pipeline_request(args, cursor, instance_table):
-    inst_name = args.instance
+def handle_pipeline_request(args, cursor, inst_name, instance_table):
     if inst_name == None:
         print("Provide an instance name!")
     else:
@@ -113,3 +118,4 @@ def handle_pipeline_request(args, cursor, instance_table):
             else:
                 remove_pipeline(cursor, instance_table, inst_name, pipeline_name)
         list_pipelines(cursor, instance_table, inst_name)
+"""

@@ -1,11 +1,19 @@
 import sqlite3, os
+from os.path import expanduser
+from sqlitedict import SqliteDict
 
-def init_tables(config_dir, instances_table):
-    db_path = "%s/dwlite.db" % config_dir
+def prepare_environment(session_table, postfix=""):
+    home_dir = expanduser("~")
+    config_dir = "%s/.datawandlite" % home_dir
+    if not os.path.exists(config_dir):
+        os.makedirs(config_dir)
+    db_path = "%s/dwlite%s.db" % (config_dir, postfix)
+    kv_path = "%s/kvstore%s.db" % (config_dir, postfix)
     conn = sqlite3.connect(db_path)
+    kvstore = SqliteDict(kv_path, autocommit=True)
     c = conn.cursor()
-    c.execute("CREATE TABLE IF NOT EXISTS %s (name text NOT NULL UNIQUE, path text NOT NULL UNIQUE)" % instances_table)
-    return conn, c, db_path
+    c.execute("CREATE TABLE IF NOT EXISTS %s (name text NOT NULL UNIQUE, path text NOT NULL UNIQUE)" %session_table)
+    return conn, c, kvstore
 
 def fetch_table(cursor, table_name):
     cursor.execute("SELECT * FROM %s" % table_name)
@@ -20,20 +28,6 @@ def show_table(cursor, table_name):
     else:
         print("No instances were found")
 
-def get_instance_dir(cursor, instance_name, table_name):
+def get_session_dir(cursor, sess_name, table_name):
     dir_map = dict(fetch_table(cursor, table_name))
-    return dir_map.get(instance_name, None)
-        
-def handle_instance_request(args, connection, cursor, table_name):
-    if args.action in ["create","remove"]:
-        inst_name = args.name
-        if inst_name == None:
-            print("Provide an instance name!")
-        else:
-            if args.action == "create":
-                cwd = os.getcwd()
-                cursor.execute('INSERT INTO %s VALUES (?,?)' % table_name, (inst_name, cwd))
-            else:
-                cursor.execute('DELETE FROM %s WHERE name=?' % table_name, (inst_name,))
-            connection.commit()
-    show_table(cursor, table_name)
+    return dir_map.get(sess_name, None)
