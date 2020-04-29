@@ -6,7 +6,7 @@ setup(name='datawandcli',
       url='',
       author='Ferenc Beres',
       author_email='fberes@info.ilab.sztaki.hu',
-      packages=['datawandcli','datawandcli.cli'],
+      packages=['datawandcli','datawandcli.cli','datawandcli.components'],
       install_requires=[
           'argparse',
           'jinja2',
