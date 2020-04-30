@@ -126,6 +126,7 @@ class Pipeline():
         self.pyscripts = []
         self.dependencies = {}
         self.parts = {}
+        self.file_paths = []
 
     @property
     def name(self):
@@ -185,15 +186,20 @@ class Pipeline():
             for item in config["notebooks"] + config["py_scripts"]:
                 deps = item.get("dependencies",[])
                 if len(deps) > 0:
-                    self.set_dependencies(item["name"], deps)
+                    self.add_dependencies(item["name"], deps)
             print("Pipeline was LOADED")
         else:
             raise ValueError("Invalid path! You must specify a JSON file.")
     
-    def add(self, obj):
+    def add(self, obj, silent=False):
         obj_name = obj.name
+        obj_path = obj.path
         if obj_name in self.parts:
-            raise RuntimeError("An object with 'name=%s' is already present in the pipeline. The names of the components must be unique!" % obj_name)
+            if not silent:
+                print("An object with 'name=%s' is already present in the pipeline. The names of the components must be unique!" % obj_name)
+        elif obj_path in self.file_paths:
+            if not silent:
+                print("An object with 'path=%s' is already present in the pipeline. Cannot add the same file twice!" % obj_path)
         else:
             if isinstance(obj, ModuleObject):
                 self.modules.append(obj)
@@ -206,8 +212,9 @@ class Pipeline():
                 self.parts[obj_name] = "pyscript"
             else:
                 raise ValueError("Object with invalid type!")
+            self.file_paths.append(obj_path)
     
-    def remove(self, obj_name, with_source=False):
+    def remove(self, obj_name, with_source=False, silent=False):
         if obj_name in self.parts:
             obj_type = self.parts[obj_name]
             if obj_type == "module":
@@ -217,6 +224,7 @@ class Pipeline():
             else:
                 self.pyscripts, fp = remove_from_pipeline(self.pyscripts, obj_name)
             del self.parts[obj_name]
+            self.file_paths.remove(fp)
             # remove all dependencies of this item
             if obj_name in self.dependencies:
                 del self.dependencies[obj_name]
@@ -224,19 +232,30 @@ class Pipeline():
             keys = list(self.dependencies.keys())
             for key in keys:
                 if obj_name in self.dependencies[key]:
-                    self.dependencies[key].remove(obj_name)
-                    if len(self.dependencies[key]) == 0:
-                        del self.dependencies[key]
+                    self.remove_dependencies(key, [obj_name])
             if with_source:
                 os.remove(fp)
                 print("%s file was deleted!" % fp)
         else:
-            raise ValueError("There was no object with 'name=%s' found in the pipeline" % obj_name)
+            if not silent:
+                print("There was no object with 'name=%s' found in the pipeline" % obj_name)
             
-    def set_dependencies(self, obj_name, dep_names=[]):
+    def add_dependencies(self, obj_name, dep_names=[], reset=False):
         for name in [obj_name]+dep_names:
             if name not in self.parts:
                 raise ValueError("'%s' name was not found in the pipeline!" % name)
             elif self.parts[name] == "module":
                 raise ValueError("Cannot set dependencies for ModuleObjects (name=%s)!" % name)
-        self.dependencies[obj_name] = dep_names
+        if obj_name in self.dependencies and not reset:
+            self.dependencies[obj_name] = list(set(self.dependencies[obj_name]).union(set(dep_names)))
+        else:
+            self.dependencies[obj_name] = dep_names
+            
+    def remove_dependencies(self, obj_name, dep_names=[]):
+         if obj_name in self.dependencies:
+                for dep_name in dep_names:
+                    if dep_name in self.dependencies[obj_name]:
+                        self.dependencies[obj_name].remove(dep_name)
+                        if len(self.dependencies[obj_name]) == 0:
+                            del self.dependencies[obj_name]
+                            break

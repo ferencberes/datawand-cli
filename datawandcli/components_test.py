@@ -18,11 +18,11 @@ def test_create():
     assert len(pipe.notebooks) == 1
     assert len(pipe.pyscripts) == 2
 
-def test_deps():
+def test_add_deps():
     pipe = Pipeline()
     pipe.load("%s/%s.json" % (pipe_dir, pipe_name))
-    pipe.set_dependencies("script1",["notebook"])
-    pipe.set_dependencies("script2",["notebook","script1"])
+    pipe.add_dependencies("script1",["notebook"])
+    pipe.add_dependencies("script2",["notebook","script1"])
     pipe.save()
     assert len(pipe.dependencies) == 2
     assert len(pipe.dependencies["script2"]) == 2
@@ -36,6 +36,13 @@ def test_remove():
     assert not os.path.exists("../notebook.py")
     assert len(pipe.dependencies) == 1
     assert len(pipe.dependencies["script2"]) == 1
+    
+def test_remove_deps():
+    pipe = Pipeline()
+    pipe.load("%s/%s.json" % (pipe_dir, pipe_name))
+    pipe.remove_dependencies("script2",["script1"])
+    pipe.save()
+    assert len(pipe.dependencies) == 0
     
 def test_clear():
     pipe = Pipeline()
