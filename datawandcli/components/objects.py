@@ -1,4 +1,5 @@
 import os, json
+from shutil import copyfile
 from jinja2 import Template
 from .templates import NOTEBOOK_SAMPLE, PY_SAMPLE
 
@@ -77,10 +78,10 @@ class Base():
         self.path = config["path"]
     
 class Configurable(Base):
-    def __init__(self, name="", type="", path="", extensions=[]):
+    def __init__(self, name="", type="", path="", is_clone=False, config={}, extensions=[]):
         super(Configurable, self).__init__(name, type, path, extensions)
-        self.is_clone = False
-        self.config = {}
+        self.is_clone = is_clone
+        self.config = config
         
     @property
     def config(self):
@@ -95,8 +96,7 @@ class Configurable(Base):
     def get(self, deps=[]):
         conf = super(Configurable, self).get(deps)
         conf["is_clone"] = "yes" if self.is_clone else "no"
-        if len(self.config) > 0:
-            conf["config"] = self.config
+        conf["config"] = self.config
         return conf
         
     def load(self, config):
@@ -105,8 +105,8 @@ class Configurable(Base):
         self.config = config.get("config",{})
         
 class ModuleObject(Configurable):
-    def __init__(self, name="", type="", path="", extensions=["py"]):
-        super(ModuleObject, self).__init__(name, type, path, extensions)
+    def __init__(self, name="", type="", path="", is_clone=False, config={}, extensions=["py"]):
+        super(ModuleObject, self).__init__(name, type, path, is_clone, config, extensions)
         
     def _create(self, path):
         print("Creating new python module: %s" % path)
@@ -114,38 +114,45 @@ class ModuleObject(Configurable):
         f.close()
         
 class NotebookObject(Configurable):
-    def __init__(self, name="", type="", path="", extensions=["ipynb"]):
-        super(NotebookObject, self).__init__(name, type, path, extensions)
+    def __init__(self, name="", type="", path="", is_clone=False, config={}, extensions=["ipynb"]):
+        super(NotebookObject, self).__init__(name, type, path, is_clone, config, extensions)
         
     def _create(self, path):
         print("Creating new ipython notebook: %s" % path)
         create_notebook(path)
         
     def copy(self):
-        return NotebookObject(self.name, self.type, self.path)
+        return NotebookObject(self.name, self.type, self.path, self.is_clone, self.config)
         
 class PyScriptObject(Configurable):
-    def __init__(self, name="", type="", path="", extensions=["py"]):
-        super(PyScriptObject, self).__init__(name, type, path, extensions)
+    def __init__(self, name="", type="", path="", is_clone=False, config={}, extensions=["py"]):
+        super(PyScriptObject, self).__init__(name, type, path, is_clone, config, extensions)
         
     def _create(self, path):
         print("Creating new python script: %s" % path)
         create_pyscript(path)
         
     def copy(self):
-        return PyScriptObject(self.name, self.type, self.path)
+        return PyScriptObject(self.name, self.type, self.path, self.is_clone, self.config)
         
 class Pipeline():
-    def __init__(self, name="", directory=None, description=""):
+    def __init__(self, name="", base_dir="", description=""):
         self.name = name
         self.description = description
-        self.path = "%s/%s.json" % (directory, self.name)
+        self.base_dir = base_dir
         self.parts = {}
         self.file_paths = []
         self.dependencies = {}
         self.num_clones = {}
-        self.default_config = {}
+        self._default_config = {}
 
+    @property
+    def path(self):
+        if self.base_dir == "":
+            return "%s.json" % self.name
+        else:
+            return "%s/%s.json" % (self.base_dir, self.name)
+        
     @property
     def name(self):
         return self._name
@@ -155,6 +162,17 @@ class Pipeline():
         if " " in str(value):
             raise ValueError("Pipeline name cannot contain spaces!")
         self._name = value
+        
+    @property
+    def default_config(self):
+        return self._default_config
+    
+    @default_config.setter
+    def default_config(self, value):
+        if isinstance(value, dict):
+            self._default_config = value
+        else:
+            raise ValueError("Configuration must be specified in a dictionary!")
         
     @property
     def modules(self):
@@ -172,9 +190,9 @@ class Pipeline():
     def config(self):
         conf = {}
         conf["name"] = self.name
+        conf["base_dir"] = self.base_dir
         conf["description"] = self.description
         conf["default_config"] = self.default_config
-        conf["config_path"] = self.path
         conf["imports"] = [item.get() for item in self.modules]
         conf["notebooks"] = [item.get(self.dependencies.get(item.name, [])) for item in self.notebooks]
         conf["py_scripts"] = [item.get(self.dependencies.get(item.name, [])) for item in self.pyscripts]
@@ -191,9 +209,9 @@ class Pipeline():
             with open(config_path) as f:
                 config = json.load(f)
             self.name = config["name"]
+            self.base_dir = config.get("base_dir","")
             self.description = config["description"]
-            self.default_config = config["default_config"]
-            self.path = config_path
+            self.default_config = config.get("default_config",{})
             self.num_clones = {}
             # parse modules
             for item in config["imports"]:
@@ -201,11 +219,11 @@ class Pipeline():
                 self.add(mod)
             # parse notebooks
             for item in config["notebooks"]:
-                nb = NotebookObject(item["name"], item["type"], item["path"])
+                nb = NotebookObject(item["name"], item["type"], item["path"], item["is_clone"]=="yes", item["config"])
                 self.add(nb)
             # parse scripts
             for item in config["py_scripts"]:
-                ps = PyScriptObject(item["name"], item["type"], item["path"])
+                ps = PyScriptObject(item["name"], item["type"], item["path"], item["is_clone"]=="yes", item["config"])
                 self.add(ps)
             # parse dependencies
             for item in config["notebooks"] + config["py_scripts"]:
@@ -227,9 +245,6 @@ class Pipeline():
         if obj_name in self.parts:
             if not silent:
                 print("An object with 'name=%s' is already present in the pipeline. The names of the components must be unique!" % obj_name)
-        #elif obj_path in self.file_paths:
-        #    if not silent:
-        #        print("An object with 'path=%s' is already present in the pipeline. Cannot add the same file twice!" % obj_path)
         else:
             self.parts[obj_name] = obj
             self.file_paths.append(obj_path)
@@ -250,7 +265,7 @@ class Pipeline():
             for key in keys:
                 if obj_name in self.dependencies[key]:
                     self.remove_dependencies(key, [obj_name])
-            if to_be_deleted and with_source:
+            if "CLONE" in fp or (to_be_deleted and with_source):
                 os.remove(fp)
                 print("%s file was deleted!" % fp)
         else:
@@ -277,25 +292,33 @@ class Pipeline():
                             del self.dependencies[obj_name]
                             break
                             
-    def add_clone(self, obj_name, custom_config):
+    def add_clone(self, obj_name, custom_config={}, copy=True):
+        if not isinstance(custom_config, dict):
+            raise ValueError("Configuration must be specified in a dictionary!")
         if obj_name in self.parts:
             obj_config = self.default_config.copy()
             obj_config.update(custom_config)
             cnt = self.num_clones.get(obj_name, 0)
             clone = self.parts[obj_name].copy()
-            clone.name = "%s_CLONE%i" % (obj_name, cnt+1)
+            old_path = str(clone.path)
+            postfix = "_CLONE_%i" % (cnt+1)
+            clone.name = obj_name + postfix
+            if copy:
+                new_path = old_path.replace(".",postfix+".")
+                copyfile(old_path, new_path)
+                clone.path = new_path
             clone.is_clone = True
             clone.config = obj_config
             self.add(clone)
-            print(obj_name, cnt+1)
             self.num_clones[obj_name] = (cnt+1)
         else:
+            print(obj_name)
             raise ValueError("Invalid object name!")
     
     def clear(self):
         items = list(self.num_clones.items())
         for obj_name, cnt in items:
             for i in range(cnt):
-                clone_name = "%s_CLONE%i" % (obj_name, i+1)
+                clone_name = "%s_CLONE_%i" % (obj_name, i+1)
                 self.remove(clone_name, with_source=False)
             del self.num_clones[obj_name]

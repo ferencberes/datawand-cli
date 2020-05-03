@@ -5,9 +5,9 @@ from .utils import *
 def get_session_dir(cursor, sess_name, table_name):
     dir_map = dict(fetch_table(cursor, table_name))
     sess_dir = dir_map.get(sess_name, None)
-    if sess_dir != None and not "datawand" in os.listdir(sess_dir):
-        os.makedirs(sess_dir + "/datawand/pipelines")
-        os.makedirs(sess_dir + "/datawand/experiments")
+    #if sess_dir != None and not "datawand" in os.listdir(sess_dir):
+    #    os.makedirs(sess_dir + "/datawand/pipelines")
+    #    os.makedirs(sess_dir + "/datawand/experiments")
     return sess_dir
 
 def create_session(connection, cursor, table_name, sess_name):
@@ -23,7 +23,7 @@ def remove_session(kvstore, connection, cursor, table_name, sess_name):
     sess_dir = get_session_dir(cursor, sess_name, table_name)
     cursor.execute('DELETE FROM %s WHERE name=?' % table_name, (sess_name,))
     connection.commit()
-    rmtree(sess_dir+"/datawand")
+    #rmtree(sess_dir+"/datawand")
     return get_session_dir(cursor, sess_name, table_name) == None
     
 def list_sessions(cursor, table_name):
@@ -49,10 +49,10 @@ def status_session(kvstore, cursor, table_name):
     if current_sess != None:
         print("Session '%s' is currently active." % current_sess)
         sess_dir = get_session_dir(cursor, current_sess, table_name)
-        num_pipes = len(os.listdir(sess_dir+"/datawand/pipelines"))
-        num_exps = len(os.listdir(sess_dir+"/datawand/experiments"))
-        print("Number of pipelines in this session: %i" % num_pipes)
-        print("Number of pipelines in this session: %i" % num_exps)
+        #num_pipes = len(os.listdir(sess_dir+"/datawand/pipelines"))
+        #num_exps = len(os.listdir(sess_dir+"/datawand/experiments"))
+        #print("Number of pipelines in this session: %i" % num_pipes)
+        #print("Number of experiments in this session: %i" % num_exps)
     else:
         print("No active session was found.")
     return current_sess, num_pipes, num_exps
