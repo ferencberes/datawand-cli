@@ -10,7 +10,8 @@ setup(name='datawandcli',
       install_requires=[
           'argparse',
           'jinja2',
-          'sqlitedict'
+          'sqlitedict',
+          'luigi'
       ],
       entry_points={
           'console_scripts': ['datawand = datawandcli.cli.main:execute']

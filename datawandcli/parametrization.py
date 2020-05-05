@@ -1,4 +1,6 @@
+import os
 from datawandcli.components.objects import Pipeline, Configurable
+from datawandcli.components.luigi import pyscript_template, master_template, dependency_extractor
 
 class ParamHelper():
     def __init__(self, base_dir, pipeline_name, args):
@@ -40,10 +42,10 @@ class ParamHelper():
     def _load_custom_config(self):
         conf = {}
         for name, obj in self.pipeline.parts.items():
-            if self.pipeline.base_dir == "":
-                fp = obj.path
-            else:
-                fp = self.pipeline.base_dir + "/" + obj.path
+            #if self.pipeline.base_dir == "":
+            fp = obj.path
+            #else:
+            #    fp = self.pipeline.base_dir + "/" + obj.path
             if fp == self._execution_path:
                 conf = obj.config
                 break
@@ -79,12 +81,13 @@ class ConfigGenerator():
     def _load(self, pipe_path):
         self._configurables = []
         self.pipeline = Pipeline()
-        self.pipeline.load(pipe_path)
+        self.pipeline.load(pipe_path, self.experiment_name, self.experiment_dir)
+        print(self.pipeline.name, self.pipeline.experiment_name)
         for name, item in self.pipeline.parts.items():
             if isinstance(item, Configurable):
                 self._configurables.append(name)
                 
-    def save_params(self, default_config, custom_config={}):
+    def save_params(self, default_config, custom_config={}, with_luigi=True):
         self.pipeline.default_config = default_config
         for obj_name, obj_clones in custom_config.items():
             if not isinstance(obj_clones, list):
@@ -92,8 +95,33 @@ class ConfigGenerator():
             else:
                 for clone_conf in obj_clones:
                     self.pipeline.add_clone(obj_name, clone_conf)
-        if self.experiment_name != None:
-            self.pipeline.name = self.experiment_name
-        if self.experiment_dir != None:
-            self.pipeline.base_dir = self.experiment_dir
+        if with_luigi:
+            self.generate_luigi_plan()
         self.pipeline.save()
+        
+    def generate_luigi_plan(self):
+        clones = []
+        for task_name, obj in self.pipeline.parts.items():
+            if obj.is_clone:
+                clones.append(obj)
+        plan = """
+from datawandcli.components.luigi import PythonScriptTask
+import luigi
+        """
+        experiment_name = self.pipeline.experiment_name
+        for obj in clones:
+            path_prefix = ".".join(obj.path.split(".")[:-1])
+            for tmp_file in [path_prefix+".info", path_prefix+".log"]:
+                if os.path.exists(tmp_file):
+                    os.remove(tmp_file)
+            if obj.name in self.pipeline.dependencies:
+                deps = dependency_extractor(self.pipeline.dependencies[obj.name])
+            else:
+                deps = ""
+            plan += pyscript_template.render(name=obj.name, path=obj.path, config=obj.config, name_space=experiment_name, deps=deps)
+            plan += "\n"
+        plan += master_template.render(config=self.pipeline.default_config, name_space=experiment_name, deps=dependency_extractor([obj.name for obj in clones]))
+        with open("%s/%s.py" % (self.pipeline.base_dir, experiment_name), 'w') as f:
+            f.write(plan)
+        print("Luigi plan was generated")
+        

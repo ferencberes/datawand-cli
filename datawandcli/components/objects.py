@@ -136,8 +136,9 @@ class PyScriptObject(Configurable):
         return PyScriptObject(self.name, self.type, self.path, self.is_clone, self.config)
         
 class Pipeline():
-    def __init__(self, name="", base_dir="", description=""):
+    def __init__(self, name="", base_dir="", description="", experiment_name=""):
         self.name = name
+        self.experiment_name = experiment_name
         self.description = description
         self.base_dir = base_dir
         self.parts = {}
@@ -156,6 +157,26 @@ class Pipeline():
     @property
     def name(self):
         return self._name
+    
+    @property
+    def experiment_name(self):
+        return self.name if self._experiment_name == "" else self._experiment_name
+    
+    @property
+    def base_dir(self):
+        return self._base_dir
+    
+    @base_dir.setter
+    def base_dir(self, value):
+        if value != "" and not os.path.exists(value):
+            os.makedirs(value)
+        self._base_dir = value
+        
+    @experiment_name.setter
+    def experiment_name(self, value):
+        if " " in str(value):
+            raise ValueError("Experiment name cannot contain spaces!")
+        self._experiment_name = value
     
     @name.setter
     def name(self, value):
@@ -190,6 +211,7 @@ class Pipeline():
     def config(self):
         conf = {}
         conf["name"] = self.name
+        conf["experiment_name"] = self.experiment_name
         conf["base_dir"] = self.base_dir
         conf["description"] = self.description
         conf["default_config"] = self.default_config
@@ -198,18 +220,30 @@ class Pipeline():
         conf["py_scripts"] = [item.get(self.dependencies.get(item.name, [])) for item in self.pyscripts]
         return conf
     
+    def _duplicate_file(self, old_path, new_path, delim="/"):
+        fp = str(new_path)
+        if self.base_dir != "":
+            fp = self.base_dir + delim + fp
+        fp_dir = delim.join(fp.split(delim)[:-1])
+        if not os.path.exists(fp_dir):
+            os.makedirs(fp_dir)
+        copyfile(old_path, fp)
+    
     def save(self):
         with open(self.path, 'w') as f:
             json.dump(self.config, f, sort_keys=True, indent="    ")
+        for obj in self.modules:
+            self._duplicate_file(obj.path, obj.path)
         print("Pipeline was SAVED")
     
-    def load(self, config_path):
+    def load(self, config_path, experiment_name=None, experiment_dir=None):
         ext = config_path.split(".")[-1]
         if ext == "json":
             with open(config_path) as f:
                 config = json.load(f)
             self.name = config["name"]
-            self.base_dir = config.get("base_dir","")
+            self.experiment_name = config["experiment_name"] if experiment_name == None else experiment_name
+            self.base_dir = config.get("base_dir","") if experiment_dir == None else experiment_dir
             self.description = config["description"]
             self.default_config = config.get("default_config",{})
             self.num_clones = {}
@@ -292,21 +326,22 @@ class Pipeline():
                             del self.dependencies[obj_name]
                             break
                             
-    def add_clone(self, obj_name, custom_config={}, copy=True):
+    def add_clone(self, obj_name, custom_config={}):
         if not isinstance(custom_config, dict):
             raise ValueError("Configuration must be specified in a dictionary!")
         if obj_name in self.parts:
-            obj_config = self.default_config.copy()
-            obj_config.update(custom_config)
+            #obj_config = self.default_config.copy()
+            #obj_config.update(custom_config)
+            obj_config = custom_config
             cnt = self.num_clones.get(obj_name, 0)
             clone = self.parts[obj_name].copy()
             old_path = str(clone.path)
+            extension = old_path.split(".")[-1]
             postfix = "_CLONE_%i" % (cnt+1)
             clone.name = obj_name + postfix
-            if copy:
-                new_path = old_path.replace(".",postfix+".")
-                copyfile(old_path, new_path)
-                clone.path = new_path
+            new_path = old_path.replace("."+extension,postfix+"."+extension)
+            self._duplicate_file(old_path, new_path)
+            clone.path = new_path
             clone.is_clone = True
             clone.config = obj_config
             self.add(clone)
