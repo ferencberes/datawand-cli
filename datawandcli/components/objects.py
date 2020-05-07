@@ -118,8 +118,9 @@ class NotebookObject(Configurable):
         super(NotebookObject, self).__init__(name, type, path, is_clone, config, extensions)
         
     def _create(self, path):
-        print("Creating new ipython notebook: %s" % path)
-        create_notebook(path)
+        if not self.is_clone:
+            print("Creating new ipython notebook: %s" % path)
+            create_notebook(path)
         
     def copy(self):
         return NotebookObject(self.name, self.type, self.path, self.is_clone, self.config)
@@ -129,8 +130,9 @@ class PyScriptObject(Configurable):
         super(PyScriptObject, self).__init__(name, type, path, is_clone, config, extensions)
         
     def _create(self, path):
-        print("Creating new python script: %s" % path)
-        create_pyscript(path)
+        if not self.is_clone:
+            print("Creating new python script: %s" % path)
+            create_pyscript(path)
         
     def copy(self):
         return PyScriptObject(self.name, self.type, self.path, self.is_clone, self.config)
@@ -334,16 +336,16 @@ class Pipeline():
             #obj_config.update(custom_config)
             obj_config = custom_config
             cnt = self.num_clones.get(obj_name, 0)
+            postfix = "_CLONE_%i" % (cnt+1)
             clone = self.parts[obj_name].copy()
+            clone.is_clone = True
+            clone.name = obj_name + postfix
+            clone.config = obj_config
             old_path = str(clone.path)
             extension = old_path.split(".")[-1]
-            postfix = "_CLONE_%i" % (cnt+1)
-            clone.name = obj_name + postfix
             new_path = old_path.replace("."+extension,postfix+"."+extension)
-            self._duplicate_file(old_path, new_path)
             clone.path = new_path
-            clone.is_clone = True
-            clone.config = obj_config
+            self._duplicate_file(old_path, new_path)
             self.add(clone)
             self.num_clones[obj_name] = (cnt+1)
         else:
@@ -351,9 +353,15 @@ class Pipeline():
             raise ValueError("Invalid object name!")
     
     def clear(self):
+        # remove clones
         items = list(self.num_clones.items())
         for obj_name, cnt in items:
             for i in range(cnt):
                 clone_name = "%s_CLONE_%i" % (obj_name, i+1)
                 self.remove(clone_name, with_source=False)
             del self.num_clones[obj_name]
+        # clear config
+        self.default_config = {}
+        for obj_name in self.parts:
+            if isinstance(self.parts[obj_name], Configurable):
+                self.parts[obj_name]["config"] = {}
