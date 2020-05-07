@@ -3,12 +3,22 @@ from components.objects import *
 
 pipe_dir = "../"
 pipe_name = "First"
+module_path = "../module.py"
+nb_path = "../notebook.ipynb"
+script_path_1 = "../script1.py"
+script_path_2 = "../script2.py"
+
+def test_create_obj():
+    assert create_object(module_path, pipe_name, "module")
+    assert create_object(nb_path, pipe_name, "notebook")
+    assert create_object(script_path_1, pipe_name, "pyscript")
+    assert create_object(script_path_2, pipe_name, "pyscript")
 
 def test_add_obj():
-    mod = ModuleObject("module","trial","../module.py")
-    nb = NotebookObject("notebook","trial","../notebook.ipynb")
-    py1 = PyScriptObject("script1","trial","../script1.py")
-    py2 = PyScriptObject("script2","trial","../script2.py")
+    mod = ModuleObject("module","trial",module_path)
+    nb = NotebookObject("notebook","trial",nb_path)
+    py1 = PyScriptObject("script1","trial",script_path_1)
+    py2 = PyScriptObject("script2","trial",script_path_2)
     pipe = Pipeline(pipe_name, pipe_dir)
     pipe.description = "bla bla bla"
     for obj in [mod, nb, py1, py2]:
@@ -63,7 +73,6 @@ def test_remove_deps():
     pipe.remove_dependencies("script2",["script1"])
     pipe.save()
     assert len(pipe.dependencies) == 0
-
 
 def test_cleanup():
     pipe = Pipeline()

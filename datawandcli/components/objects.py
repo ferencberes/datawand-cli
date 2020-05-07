@@ -3,17 +3,23 @@ from shutil import copyfile
 from jinja2 import Template
 from .templates import NOTEBOOK_SAMPLE, PY_SAMPLE
 
-def create_notebook(path):
-    template = Template(NOTEBOOK_SAMPLE)
-    rendered = template.render(rel_path="ALMA", pipeline_name="KORTE")
+def create_object(path, pipeline_name, obj_type, delimeter="/"):
+    success = False
+    if obj_type == "module":
+        content = ""
+    else:
+        if obj_type=="pyscript":
+            template = Template(PY_SAMPLE)
+        elif obj_type == "notebook":
+            template = Template(NOTEBOOK_SAMPLE)
+        else:
+            raise ValueError("Choose object_type from values ['pyscript','notebook','module']!")
+        depth = len(path.split(delimeter))-1
+        content = template.render(rel_path="../"*depth, pipeline_name=pipeline_name)
     with open(path, 'w') as f:
-        f.write(rendered)
-        
-def create_pyscript(path):
-    template = Template(PY_SAMPLE)
-    rendered = template.render(rel_path="ALMA", pipeline_name="KORTE")
-    with open(path, 'w') as f:
-        f.write(rendered)
+        f.write(content)
+    success = True
+    return success
         
 def remove_from_pipeline(objects, obj_name):
     tmp = objects.copy()
@@ -24,10 +30,11 @@ def remove_from_pipeline(objects, obj_name):
     return tmp, objects[i].path
 
 class Base():
-    def __init__(self, name, type, path, extensions=[]):
+    def __init__(self, name, type, path, is_clone=False, extensions=[]):
+        self._extensions = extensions
+        self.is_clone = is_clone
         self.name = name
         self.type = type
-        self._extensions = extensions
         self.path = path
         
     @property
@@ -54,19 +61,16 @@ class Base():
         
     @path.setter
     def path(self, value):
-        if value != "" and len(self._extensions) > 0:
-            ext = value.split(".")[-1]
-            if ext not in self._extensions:
-                raise ValueError("Invalid file extension '%w'! It must be '.%s'." % (ext, str(self._extensions)))
-            if not os.path.exists(value):
-                self._create(value)
-            self._path = value
-
-    def _create(self, path):
-        pass
+        ext = value.split(".")[-1]
+        if ext not in self._extensions:
+            raise ValueError("Invalid file extension '%s'! It must be '.%s'." % (str(ext), str(self._extensions)))
+        if not os.path.exists(value) and not self.is_clone:
+            raise FileNotFoundError(value)
+        self._path = value
     
     def get(self, deps=[]):
         conf = {"name":self.name, "type":self.type, "path":self.path}
+        conf["is_clone"] = "yes" if self.is_clone else "no"
         if len(deps) > 0:
             conf["dependencies"] = deps
         return conf
@@ -76,11 +80,11 @@ class Base():
         self.name = config["name"]
         self.type = config["type"]
         self.path = config["path"]
+        self.is_clone = config["is_clone"] == "yes"
     
 class Configurable(Base):
     def __init__(self, name="", type="", path="", is_clone=False, config={}, extensions=[]):
-        super(Configurable, self).__init__(name, type, path, extensions)
-        self.is_clone = is_clone
+        super(Configurable, self).__init__(name, type, path, is_clone, extensions)
         self.config = config
         
     @property
@@ -95,44 +99,27 @@ class Configurable(Base):
         
     def get(self, deps=[]):
         conf = super(Configurable, self).get(deps)
-        conf["is_clone"] = "yes" if self.is_clone else "no"
         conf["config"] = self.config
         return conf
         
     def load(self, config):
         super(Configurable, self).load(config)
-        self.is_clone = config["is_clone"] == "yes"
         self.config = config.get("config",{})
         
 class ModuleObject(Configurable):
-    def __init__(self, name="", type="", path="", is_clone=False, config={}, extensions=["py"]):
+    def __init__(self, name, type, path, is_clone=False, config={}, extensions=["py"]):
         super(ModuleObject, self).__init__(name, type, path, is_clone, config, extensions)
         
-    def _create(self, path):
-        print("Creating new python module: %s" % path)
-        f = open(path, 'w')
-        f.close()
-        
 class NotebookObject(Configurable):
-    def __init__(self, name="", type="", path="", is_clone=False, config={}, extensions=["ipynb"]):
+    def __init__(self, name, type, path, is_clone=False, config={}, extensions=["ipynb"]):
         super(NotebookObject, self).__init__(name, type, path, is_clone, config, extensions)
-        
-    def _create(self, path):
-        if not self.is_clone:
-            print("Creating new ipython notebook: %s" % path)
-            create_notebook(path)
         
     def copy(self):
         return NotebookObject(self.name, self.type, self.path, self.is_clone, self.config)
         
 class PyScriptObject(Configurable):
-    def __init__(self, name="", type="", path="", is_clone=False, config={}, extensions=["py"]):
+    def __init__(self, name, type, path, is_clone=False, config={}, extensions=["py"]):
         super(PyScriptObject, self).__init__(name, type, path, is_clone, config, extensions)
-        
-    def _create(self, path):
-        if not self.is_clone:
-            print("Creating new python script: %s" % path)
-            create_pyscript(path)
         
     def copy(self):
         return PyScriptObject(self.name, self.type, self.path, self.is_clone, self.config)
@@ -301,7 +288,7 @@ class Pipeline():
             for key in keys:
                 if obj_name in self.dependencies[key]:
                     self.remove_dependencies(key, [obj_name])
-            if "CLONE" in fp or (to_be_deleted and with_source):
+            if with_source and os.path.exists(fp):
                 os.remove(fp)
                 print("%s file was deleted!" % fp)
         else:
@@ -364,4 +351,4 @@ class Pipeline():
         self.default_config = {}
         for obj_name in self.parts:
             if isinstance(self.parts[obj_name], Configurable):
-                self.parts[obj_name]["config"] = {}
+                self.parts[obj_name].config = {}
