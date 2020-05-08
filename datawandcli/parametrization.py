@@ -1,6 +1,6 @@
 import os
-from datawandcli.components.objects import Pipeline, Configurable
-from datawandcli.components.luigi import pyscript_template, master_template, dependency_extractor
+from datawandcli.components.objects import Pipeline, Configurable, ModuleObject
+from datawandcli.components.luigi import pyscript_template, master_template, run_template, dependency_extractor
 
 class ParamHelper():
     def __init__(self, base_dir, pipeline_name, args):
@@ -95,9 +95,18 @@ class ConfigGenerator():
             else:
                 for clone_conf in obj_clones:
                     self.pipeline.add_clone(obj_name, clone_conf)
+        # delete original resources
+        to_be_removed = []
+        for name, obj in self.pipeline.parts.items():
+            if not obj.is_clone and not isinstance(obj, ModuleObject):
+                to_be_removed.append(name)
+        for name in to_be_removed:
+            self.pipeline.remove(name)
+        # save pipeline
+        self.pipeline.save()
+        # generate luigi plan
         if with_luigi:
             self.generate_luigi_plan()
-        self.pipeline.save()
         
     def generate_luigi_plan(self):
         clones = []
@@ -123,5 +132,7 @@ import luigi
         plan += master_template.render(config=self.pipeline.default_config, name_space=experiment_name, deps=dependency_extractor([obj.name for obj in clones]))
         with open("%s/%s.py" % (self.pipeline.base_dir, experiment_name), 'w') as f:
             f.write(plan)
+        with open("%s/%s.sh" % (self.pipeline.base_dir, experiment_name), 'w') as f:
+            f.write(run_template.render(name_space=self.pipeline.experiment_name, task_name="Master"))
         print("Luigi plan was generated")
         

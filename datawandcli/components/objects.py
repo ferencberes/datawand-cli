@@ -216,7 +216,8 @@ class Pipeline():
         fp_dir = delim.join(fp.split(delim)[:-1])
         if not os.path.exists(fp_dir):
             os.makedirs(fp_dir)
-        copyfile(old_path, fp)
+        if old_path != fp:
+            copyfile(old_path, fp)
     
     def save(self):
         with open(self.path, 'w') as f:

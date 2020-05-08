@@ -1,8 +1,7 @@
 import sys
+from my_module import print_params
 from datawandcli.parametrization import ParamHelper
 
-print(sys.argv)
 ph = ParamHelper('', 'Trial', sys.argv)
-print(ph.get("p1"))
-print(ph.get("p2"))
-print(ph.get("p3"))
+p1, p2, p3 = ph.get("p1"),ph.get("p2"),ph.get("p3")
+print_params(p1, p2, p3)

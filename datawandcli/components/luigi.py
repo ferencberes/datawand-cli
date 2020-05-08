@@ -76,3 +76,7 @@ class Master(luigi.Task):
     def run(self):
         print("All dependencies are done")
 """)
+
+run_template = Template("""
+PYTHONPATH='.' luigi --module {{ name_space }} {{ name_space }}.{{task_name}}
+""")
