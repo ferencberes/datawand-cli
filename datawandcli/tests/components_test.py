@@ -1,5 +1,5 @@
 import os
-from components.objects import *
+from datawandcli.components.objects import *
 
 pipe_dir = "../"
 pipe_name = "First"

@@ -1,7 +1,7 @@
 import os
-from cli.utils import *
-from cli.session_utils import *
-from cli.pipeline_utils import *
+from datawandcli.cli.utils import *
+from datawandcli.cli.session_utils import *
+from datawandcli.cli.pipeline_utils import *
 
 home_dir = expanduser("~")
 config_dir = "%s/.datawandlite" % home_dir
