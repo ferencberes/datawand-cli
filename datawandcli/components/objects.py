@@ -77,10 +77,10 @@ class Base():
         
     def load(self, config):
         self.extensions = [config["path"].split(".")[-1]]
+        self.is_clone = config["is_clone"] == "yes"
         self.name = config["name"]
         self.type = config["type"]
         self.path = config["path"]
-        self.is_clone = config["is_clone"] == "yes"
     
 class Configurable(Base):
     def __init__(self, name="", type="", path="", is_clone=False, config={}, extensions=[]):
