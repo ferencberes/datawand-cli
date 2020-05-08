@@ -1,6 +1,6 @@
 import os
 from datawandcli.components.objects import Pipeline, Configurable, ModuleObject
-from datawandcli.components.luigi import pyscript_template, master_template, run_template, dependency_extractor
+from datawandcli.components.luigi import *
 
 class ParamHelper():
     def __init__(self, base_dir, pipeline_name, args):
@@ -87,7 +87,7 @@ class ConfigGenerator():
             if isinstance(item, Configurable):
                 self._configurables.append(name)
                 
-    def save_params(self, default_config, custom_config={}, with_luigi=True):
+    def save_params(self, default_config, custom_config={}, with_luigi=True, local_scheduler=False):
         self.pipeline.default_config = default_config
         for obj_name, obj_clones in custom_config.items():
             if not isinstance(obj_clones, list):
@@ -106,9 +106,9 @@ class ConfigGenerator():
         self.pipeline.save()
         # generate luigi plan
         if with_luigi:
-            self.generate_luigi_plan()
+            self.generate_luigi_plan(local_scheduler)
         
-    def generate_luigi_plan(self):
+    def generate_luigi_plan(self, local_scheduler=False):
         clones = []
         for task_name, obj in self.pipeline.parts.items():
             if obj.is_clone:
@@ -133,6 +133,9 @@ import luigi
         with open("%s/%s.py" % (self.pipeline.base_dir, experiment_name), 'w') as f:
             f.write(plan)
         with open("%s/%s.sh" % (self.pipeline.base_dir, experiment_name), 'w') as f:
-            f.write(run_template.render(name_space=self.pipeline.experiment_name, task_name="Master"))
+            if local_scheduler:
+                f.write(run_local_template.render(name_space=self.pipeline.experiment_name, task_name="Master"))
+            else:
+                f.write(run_template.render(name_space=self.pipeline.experiment_name, task_name="Master"))
         print("Luigi plan was generated")
         

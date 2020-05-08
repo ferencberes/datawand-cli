@@ -80,3 +80,7 @@ class Master(luigi.Task):
 run_template = Template("""
 PYTHONPATH='.' luigi --module {{ name_space }} {{ name_space }}.{{task_name}}
 """)
+
+run_local_template = Template("""
+PYTHONPATH='.' luigi --module {{ name_space }} {{ name_space }}.{{task_name}} --local-scheduler
+""")

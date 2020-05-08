@@ -30,7 +30,7 @@ def test_demo_1_init():
         PARAMETERS[item] = []
     PARAMETERS["sample"].append({"p1":1.0,"p2":0.5})
     PARAMETERS["sample"].append({"p1":0.0,"p2":1.0})
-    cg.save_params(DEFAULTS, PARAMETERS)
+    cg.save_params(DEFAULTS, PARAMETERS, local_scheduler=True)
     cg.pipeline.save()
     assert len(cg.pipeline.parts) == 3
     assert cg.pipeline.num_clones["sample"] == 2
@@ -74,7 +74,7 @@ def test_demo_2_init():
     PARAMETERS["sample"].append({"p2":1.0})
     PARAMETERS["sample"].append({"p1":10.0,"p2":-10.0})
     PARAMETERS["sample"].append({"p1":-10.0,"p2":10.0})
-    cg.save_params(DEFAULTS, PARAMETERS)
+    cg.save_params(DEFAULTS, PARAMETERS, local_scheduler=True)
     cg.pipeline.save()
     assert len(cg.pipeline.parts) == 5
     assert cg.pipeline.num_clones["sample"] == 4
