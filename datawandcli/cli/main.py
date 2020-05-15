@@ -11,29 +11,21 @@ def cli_parser():
     _ = subparsers.add_parser("status", help="Get information about your current folder")
     init_parser = subparsers.add_parser("init", help="Enable datawand for your current folder")
     init_parser.add_argument("--name", help="provide repository name")
-    delete_parser = subparsers.add_parser("delete", help="Disable  repository by providing its name or path")
+    delete_parser = subparsers.add_parser("drop", help="Disable  repository by providing its name or path")
     delete_parser.add_argument("--name", help="provide repository name")
-    delete_parser.add_argument("--path", help="provide repository absolute path")
-    """
-    create_parser = subparsers.add_parser("create")
-    create_parser.add_argument(
-        "object",
-        choices=["session","pipeline"],
-        help='Choose from the available object options')
-    create_parser.add_argument("name", help="provide object name")
-    remove_parser = subparsers.add_parser("remove")
-    remove_parser.add_argument(
-        "object",
-        choices=["session","pipeline"],
-        help='Choose from the available object options')
-    remove_parser.add_argument("name", help="provide object name")
-    """
+    pipeline_parser = subparsers.add_parser("pipeline", help="Choose from ['create','drop','list'] subcommands!")
+    pipe_subs = pipeline_parser.add_subparsers(dest="subcommand")
+    _ = pipe_subs.add_parser("list", help="List pipelines")
+    create_pipe = pipe_subs.add_parser("create", help="Create new pipeline")
+    create_pipe.add_argument("--name", help="provide pipeline name")
+    delete_pipe = pipe_subs.add_parser("drop", help="Remove pipeline")
+    delete_pipe.add_argument("--path", help="provide pipeline json file path")
     return parser
 
 def execute():
     # init environment
     repos_table = "repositories"
-    conn, c, _ = prepare_environment(repos_table)
+    conn, c = prepare_environment(repos_table)
     
     # parse arguments
     parser = cli_parser()
@@ -46,38 +38,20 @@ def execute():
         show_repo_table(list_repos(c, repos_table))
     elif args.command == "status":
         status_repo(c, repos_table)
-    elif args.command == "delete":
-        success = remove_repo(conn, c, repos_table, args.name, args.path)
+    elif args.command == "drop":
+        success = remove_repo(conn, c, repos_table, args.name)
         if success:
             print("A repository was deleted.")
+    elif args.command == "pipeline":
+        if args.subcommand == "list":
+            list_pipelines(c, repos_table)
+        elif args.subcommand == "create":
+            create_pipeline(c, repos_table, args.name)
+        elif args.subcommand == "drop":
+            remove_pipeline(c, repos_table, args.path)
+        else:
+            parser.print_help()
     else:
         parser.print_help()
-    """
-    elif args.command == "create":
-        obj_name = args.name
-        if args.object == "session":
-            success = create_session(conn, c, repos_table, obj_name)
-            if success:
-                print("Sessions:")
-                print(list_sessions(c, repos_table))
-        else:
-            success = create_pipeline(kvstore, c, repos_table, obj_name)
-            if success:
-                print("Pipelines:")
-                list_pipeline(kvstore, c, repos_table)
-    elif args.command == "remove":
-        obj_name = args.name
-        if args.object == "session":
-            success = remove_session(kvstore, conn, c, repos_table, obj_name)
-            if success:
-                print("Sessions:")
-                print(list_sessions(c, repos_table))
-        else:
-            success = remove_pipeline(kvstore, c, repos_table, obj_name)
-            if success:
-                print("Pipelines:")
-                list_pipeline(kvstore, c, repos_table)
-    """
-    
     # close database connection
     conn.close()

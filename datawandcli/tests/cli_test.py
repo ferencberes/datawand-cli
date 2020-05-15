@@ -1,4 +1,5 @@
 import os
+"""
 from datawandcli.cli.utils import *
 from datawandcli.cli.session_utils import *
 from datawandcli.cli.pipeline_utils import *
@@ -34,13 +35,11 @@ def test_create_pipeline():
     conn, c, kvstore = prepare_environment(sess_table, postfix="_test")
     assert create_pipeline(kvstore, c, sess_table, pipe_name)
     
-"""
-def test_list_pipeline():
-    sess_table = "sessions"
-    conn, c, kvstore = prepare_environment(sess_table, postfix="_test")
-    cnt = list_pipeline(kvstore, c, sess_table)
-    assert cnt == 1
-"""
+#def test_list_pipeline():
+#    sess_table = "sessions"
+#    conn, c, kvstore = prepare_environment(sess_table, postfix="_test")
+#    cnt = list_pipeline(kvstore, c, sess_table)
+#    assert cnt == 1
     
 def test_remove_pipeline():
     sess_table, pipe_name = "sessions", "pipe1"
@@ -63,3 +62,4 @@ def test_single_remove():
     size = len(list_sessions(c, sess_table))
     print(success, size)
     assert success and (size == 0)
+"""

@@ -2,71 +2,67 @@ import os
 from shutil import rmtree
 from .utils import *
 
-def get_repo_name(cursor, path, table_name):
-    name = None
-    rows = fetch_table(cursor, table_name)
-    for repo_name, repo_path, _ in rows:
-        if repo_path in path:
-            name = repo_name
-            break
-    return name
+NO_DW_MSG = "Datawand was not enabled for your current folder!"
 
-def get_repo_path(cursor, name, table_name):
+def get_repo_path(cursor, name, repo_table):
     path = None
-    rows = fetch_table(cursor, table_name)
+    rows = fetch_table(cursor, repo_table)
     for repo_name, repo_path, _ in rows:
         if repo_name == name:
             path = repo_path
             break
     return path
 
-def validate(cursor, repo_name, repo_path, table_name):
-    rows = fetch_table(cursor, table_name)
+def get_repo(cursor, path, repo_table):
+    name = None
+    rows = fetch_table(cursor, repo_table)
+    for repo_name, repo_path, _ in rows:
+        if repo_path in path:
+            name = repo_name
+            break
+    return name, None if name == None else repo_path
+
+def validate(cursor, repo_name, repo_path, repo_table):
+    rows = fetch_table(cursor, repo_table)
     for name, path, _ in rows:
         if name == repo_name:
             raise RuntimeError("Provide a unique repository name!")
         if repo_path in path or path in repo_path:
             raise RuntimeError("Repository paths cannot contain each other!")
 
-def create_repo(connection, cursor, table_name, repo_name=None):
+def create_repo(connection, cursor, repo_table, repo_name=None):
     cwd = os.getcwd()
     if repo_name == None:
         repo_name = cwd.split("/")[-1]
-    validate(cursor, repo_name, cwd, table_name)
-    cursor.execute('INSERT INTO %s VALUES (?,?,CURRENT_TIMESTAMP)' % table_name, (repo_name, cwd))
+    validate(cursor, repo_name, cwd, repo_table)
+    cursor.execute('INSERT INTO %s VALUES (?,?,CURRENT_TIMESTAMP)' % repo_table, (repo_name, cwd))
     connection.commit()
-    return get_repo_name(cursor, cwd, table_name) != None
+    return get_repo(cursor, cwd, repo_table)[0] != None
 
-def list_repos(cursor, table_name):
-    return fetch_table(cursor, table_name)
+def list_repos(cursor, repo_table):
+    return fetch_table(cursor, repo_table)
 
-def remove_repo(connection, cursor, table_name, repo_name=None, repo_path=None):
-    old_length = len(fetch_table(cursor, table_name))
+def remove_repo(connection, cursor, repo_table, repo_name=None):
+    old_length = len(fetch_table(cursor, repo_table))
     if repo_name != None:
-        cursor.execute('DELETE FROM %s WHERE name=?' % table_name, (repo_name,))
-        connection.commit()
-    elif repo_path != None:
-        if "/" == repo_path[-1]:
-            repo_path = repo_path[:-1]
-        cursor.execute('DELETE FROM %s WHERE path=?' % table_name, (repo_path,))
+        cursor.execute('DELETE FROM %s WHERE name=?' % repo_table, (repo_name,))
         connection.commit()
     else:
-        raise RuntimeError("The name or the absolute path of the repository must be provided!")
-    return old_length-1 == len(fetch_table(cursor, table_name))
+        raise RuntimeError("The name of the repository must be provided!")
+    return old_length-1 == len(fetch_table(cursor, repo_table))
 
-def status_repo(cursor, table_name):
+def status_repo(cursor, repo_table):
+    success = False
     cwd = os.getcwd()
-    repo_name = get_repo_name(cursor, cwd, table_name)
+    repo_name, repo_path = get_repo(cursor, cwd, repo_table)
     if repo_name == None:
-        print("Datawand was not enabled for your current folder!")
+        print(NO_DW_MSG)
     else:
-        repo_path = get_repo_path(cursor, repo_name, table_name)
-        num_json = 0
-        for file in os.listdir(repo_path):
-            if ".json" in file:
-                num_json += 1
-        print("### Datawand repository information ###")
+        pipelines, experiments = collect_config_files(repo_path)
+        print("### repository information ###")
         print("Name: %s" % repo_name)
         print("Base folder: %s" % repo_path)
-        print("Number of pipelines: %i" % num_json)
-    return repo_name, num_json
+        print("Number of pipelines: %i" % len(pipelines))
+        print("Number of experiments: %i" % len(experiments))
+        success = True
+    return success

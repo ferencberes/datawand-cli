@@ -1,48 +1,48 @@
-import os
+import os, json
 from .utils import *
+from .repository_utils import get_repo, NO_DW_MSG
 from datawandcli.components.objects import Pipeline
 
-def create_pipeline(kvstore, cursor, sess_table, pipeline_name):
+def create_pipeline(cursor, repo_table, name, description=""):
     success = False
-    current_sess = kvstore.get("session", None)
-    if current_sess != None:
-        sess_dir = get_session_dir(cursor, current_sess, sess_table)
-        pipe_obj = Pipeline(pipeline_name, sess_dir, "") 
-        if not os.path.exists(pipe_obj.path):
-            pipe_obj.save()
-            success = True
+    cwd = os.getcwd()
+    repo_name, repo_path = get_repo(cursor, cwd, repo_table)
+    if repo_name != None:
+        file_path = "%s/%s.json" % (repo_path, name)
+        pipe_obj = Pipeline(name, description) 
+        if os.path.exists(file_path):
+            print("A Pipeline with the same name already exists!")
         else:
-            print("Pipeline already exists!")
-    else:
-        print("No active session was found. First, you must activate a session!")
-    return success
-      
-def remove_pipeline(kvstore, cursor, sess_table, pipeline_name):
-    success = False
-    current_sess = kvstore.get("session", None)
-    if current_sess != None:
-        sess_dir = get_session_dir(cursor, current_sess, sess_table)
-        pipeline_wout_extension = pipeline_name.replace(".json","")
-        f_name = "%s/%s.json" % (sess_dir, pipeline_wout_extension)
-        if os.path.exists(f_name):
-            os.remove(f_name)
+            pipe_obj.save(repo_path)
+            print("A new pipeline was created")
+            print("Configuration file at: %s" % file_path)
             success = True
-        else:
-            print("Pipeline does not exists!")
     else:
-        print("No active session was found. First, you must activate a session!")
+        print(NO_DW_MSG)
     return success
 
-def list_pipeline(kvstore, cursor, sess_table):
-    cnt = 0
-    """
-    current_sess = kvstore.get("session", None)
-    if current_sess != None:
-        sess_dir = get_session_dir(cursor, current_sess, sess_table)
-        pipes = os.listdir(sess_dir)
-        print(pipes)
-        cnt = len(pipes)
+def remove_pipeline(cursor, repo_table, file_path):
+    success = False
+    if ".json" in file_path:
+        os.remove(file_path)
+        success = True
+        print("The pipeline was deleted")
     else:
-        print("No active session was found. First, you must activate a session!")
-    """
-    return cnt
+        print("You must provide a JSON file!")
+    return success
+
+def list_pipelines(cursor, repo_table):
+    success = False
+    cwd = os.getcwd()
+    repo_name, repo_path = get_repo(cursor, cwd, repo_table)
+    if repo_name != None:
+        pipelines = collect_config_files(repo_path)[0]
+        if len(pipelines) > 0:
+            for config_path in pipelines:
+                print(config_path)
+        else:
+            print("No pipeline was found!")
+        success = True
+    else:
+        print(NO_DW_MSG)
+    return success

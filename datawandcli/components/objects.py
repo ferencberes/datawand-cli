@@ -125,7 +125,8 @@ class PyScriptObject(Configurable):
         return PyScriptObject(self.name, self.type, self.path, self.is_clone, self.config)
         
 class Pipeline():
-    def __init__(self, name="", base_dir="", description="", experiment_name=""):
+    def __init__(self, name="", description="", base_dir="", experiment_name="", verbose=False):
+        self.verbose = verbose
         self.name = name
         self.experiment_name = experiment_name
         self.description = description
@@ -135,13 +136,6 @@ class Pipeline():
         self.dependencies = {}
         self.num_clones = {}
         self._default_config = {}
-
-    @property
-    def path(self):
-        if self.base_dir == "":
-            return "%s.json" % self.name
-        else:
-            return "%s/%s.json" % (self.base_dir, self.name)
         
     @property
     def name(self):
@@ -219,12 +213,19 @@ class Pipeline():
         if old_path != fp:
             copyfile(old_path, fp)
     
-    def save(self):
-        with open(self.path, 'w') as f:
+    def save(self, output_folder=None):
+        if output_folder == None:
+            output_folder = self.base_dir
+        if output_folder == "":
+            output_path = "%s.json" % self.name
+        else:
+            output_path = "%s/%s.json" % (output_folder, self.name)
+        with open(output_path, 'w') as f:
             json.dump(self.config, f, sort_keys=True, indent="    ")
         for obj in self.modules:
             self._duplicate_file(obj.path, obj.path)
-        print("Pipeline was SAVED")
+        if self.verbose:
+            print("Pipeline was SAVED")
     
     def load(self, config_path, experiment_name=None, experiment_dir=None):
         ext = config_path.split(".")[-1]
@@ -259,7 +260,8 @@ class Pipeline():
                     if not name in self.num_clones:
                         self.num_clones[name] = 0
                     self.num_clones[name] += 1
-            print("Pipeline was LOADED")
+            if self.verbose:
+                print("Pipeline was LOADED")
         else:
             raise ValueError("Invalid path! You must specify a JSON file.")
     
@@ -337,7 +339,6 @@ class Pipeline():
             self.add(clone)
             self.num_clones[obj_name] = (cnt+1)
         else:
-            print(obj_name)
             raise ValueError("Invalid object name!")
     
     def clear(self):

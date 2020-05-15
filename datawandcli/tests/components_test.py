@@ -19,11 +19,11 @@ def test_add_obj():
     nb = NotebookObject("notebook","trial",nb_path)
     py1 = PyScriptObject("script1","trial",script_path_1)
     py2 = PyScriptObject("script2","trial",script_path_2)
-    pipe = Pipeline(pipe_name, pipe_dir)
+    pipe = Pipeline(pipe_name)
     pipe.description = "bla bla bla"
     for obj in [mod, nb, py1, py2]:
         pipe.add(obj)
-    pipe.save()
+    pipe.save(pipe_dir)
     assert len(pipe.modules) == 1
     assert len(pipe.notebooks) == 1
     assert len(pipe.pyscripts) == 2
@@ -33,7 +33,7 @@ def test_add_deps():
     pipe.load("%s/%s.json" % (pipe_dir, pipe_name))
     pipe.add_dependencies("script1",["notebook"])
     pipe.add_dependencies("script2",["notebook","script1"])
-    pipe.save()
+    pipe.save(pipe_dir)
     assert len(pipe.dependencies) == 2
     assert len(pipe.dependencies["script2"]) == 2
     
@@ -44,7 +44,7 @@ def test_add_clones():
     pipe.add_clone("script1", {"val":2})
     pipe.add_clone("script2", {"val":5})
     print(pipe.config)
-    pipe.save()
+    pipe.save(pipe_dir)
     assert pipe.num_clones["script1"] == 2
     assert pipe.num_clones["script2"] == 1
     assert len(pipe.pyscripts) == 5
@@ -53,7 +53,7 @@ def test_clear():
     pipe = Pipeline()
     pipe.load("%s/%s.json" % (pipe_dir, pipe_name))
     pipe.clear()
-    pipe.save()
+    pipe.save(pipe_dir)
     assert len(pipe.num_clones) == 0
     assert len(pipe.pyscripts) == 2
 
@@ -61,7 +61,7 @@ def test_remove_obj():
     pipe = Pipeline()
     pipe.load("%s/%s.json" % (pipe_dir, pipe_name))
     pipe.remove("notebook", with_source=True)
-    pipe.save()
+    pipe.save(pipe_dir)
     assert len(pipe.notebooks) == 0
     assert not os.path.exists("../notebook.py")
     assert len(pipe.dependencies) == 1
@@ -71,7 +71,7 @@ def test_remove_deps():
     pipe = Pipeline()
     pipe.load("%s/%s.json" % (pipe_dir, pipe_name))
     pipe.remove_dependencies("script2",["script1"])
-    pipe.save()
+    pipe.save(pipe_dir)
     assert len(pipe.dependencies) == 0
 
 def test_cleanup():
