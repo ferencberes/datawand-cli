@@ -12,7 +12,8 @@ setup(name='datawandcli',
           'jinja2',
           'sqlitedict',
           'luigi',
-          'pytest'
+          'pytest',
+          'pandas'
       ],
       entry_points={
           'console_scripts': ['datawand = datawandcli.cli.main:execute']
