@@ -2,7 +2,12 @@ import sqlite3, os
 import pandas as pd
 from os.path import expanduser
 from datawandcli.components.objects import Pipeline
-#from sqlitedict import SqliteDict
+
+### messages ###
+
+NO_DW_MSG = "Datawand was not enabled for your current folder!"
+PATH_MSG = "Provide path for pipeline json file"
+REPO_NAME_MSG = "Provide repository name"
 
 ### database ###
 
@@ -62,3 +67,41 @@ def collect_config_files(repo_path):
         if is_valid and has_clones:
             experiments.append(file)
     return pipes, experiments
+
+### repositories ###
+
+def get_repo_path(cursor, name, repo_table):
+    path = None
+    rows = fetch_table(cursor, repo_table)
+    for repo_name, repo_path, _ in rows:
+        if repo_name == name:
+            path = repo_path
+            break
+    return path
+
+def get_repo(cursor, path, repo_table):
+    name = None
+    rows = fetch_table(cursor, repo_table)
+    for repo_name, repo_path, _ in rows:
+        if repo_path in path:
+            name = repo_name
+            break
+    return name, None if name == None else repo_path
+
+### pipelines ###
+
+def list_pipelines(cursor, repo_table):
+    success = False
+    cwd = os.getcwd()
+    repo_name, repo_path = get_repo(cursor, cwd, repo_table)
+    if repo_name != None:
+        pipelines = collect_config_files(repo_path)[0]
+        if len(pipelines) > 0:
+            for config_path in pipelines:
+                print(config_path)
+        else:
+            print("No pipeline was found!")
+        success = True
+    else:
+        print(NO_DW_MSG)
+    return success

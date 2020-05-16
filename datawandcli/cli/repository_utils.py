@@ -2,26 +2,6 @@ import os
 from shutil import rmtree
 from .utils import *
 
-NO_DW_MSG = "Datawand was not enabled for your current folder!"
-
-def get_repo_path(cursor, name, repo_table):
-    path = None
-    rows = fetch_table(cursor, repo_table)
-    for repo_name, repo_path, _ in rows:
-        if repo_name == name:
-            path = repo_path
-            break
-    return path
-
-def get_repo(cursor, path, repo_table):
-    name = None
-    rows = fetch_table(cursor, repo_table)
-    for repo_name, repo_path, _ in rows:
-        if repo_path in path:
-            name = repo_name
-            break
-    return name, None if name == None else repo_path
-
 def validate(cursor, repo_name, repo_path, repo_table):
     rows = fetch_table(cursor, repo_table)
     for name, path, _ in rows:
@@ -59,10 +39,11 @@ def status_repo(cursor, repo_table):
         print(NO_DW_MSG)
     else:
         pipelines, experiments = collect_config_files(repo_path)
-        print("### repository information ###")
+        print("### General information ###")
         print("Name: %s" % repo_name)
         print("Base folder: %s" % repo_path)
         print("Number of pipelines: %i" % len(pipelines))
         print("Number of experiments: %i" % len(experiments))
-        success = True
+        print("### Pipelines ###")
+        success = list_pipelines(cursor, repo_table)
     return success

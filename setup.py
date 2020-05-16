@@ -10,7 +10,6 @@ setup(name='datawandcli',
       install_requires=[
           'argparse',
           'jinja2',
-          'sqlitedict',
           'luigi',
           'pytest',
           'pandas'
