@@ -97,7 +97,7 @@ def test_demo_2_params():
 
 def test_demo_2_run():
     fp = "experiments/demo_2/demo_2.log"
-    p = subprocess.Popen("bash demo_2.sh 2", cwd="experiments/demo_2/", stdout=open(fp, "w"), shell=True)
+    p = subprocess.Popen("bash demo_2.sh 1", cwd="experiments/demo_2/", stdout=open(fp, "w"), shell=True)
     p_status = p.wait()
     with open(fp) as f:
         output = f.read()
