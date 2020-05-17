@@ -25,6 +25,7 @@ def test_demo_1_init():
     DEFAULTS = {}
     DEFAULTS["p1"] = 0.5
     DEFAULTS["p3"] = "default"
+    DEFAULTS["sleep"] = 0
     PARAMETERS = {}
     for item in cg.pythonitem_names:
         PARAMETERS[item] = []
@@ -47,7 +48,7 @@ def test_demo_1_params():
 
 def test_demo_1_run():
     fp = "experiments/demo_1/demo_1.log"
-    p = subprocess.Popen("bash demo_1.sh", cwd="experiments/demo_1/", stdout=open(fp, "w"), shell=True)
+    p = subprocess.Popen("bash demo_1.sh 1", cwd="experiments/demo_1/", stdout=open(fp, "w"), shell=True)
     p_status = p.wait()
     with open(fp) as f:
         output = f.read()
@@ -67,6 +68,7 @@ def test_demo_2_init():
     DEFAULTS = {}
     DEFAULTS["p1"] = 0.1
     DEFAULTS["p3"] = "default"
+    DEFAULTS["sleep"] = 0
     PARAMETERS = {}
     for item in cg.pythonitem_names:
         PARAMETERS[item] = []
@@ -95,7 +97,7 @@ def test_demo_2_params():
 
 def test_demo_2_run():
     fp = "experiments/demo_2/demo_2.log"
-    p = subprocess.Popen("bash demo_2.sh", cwd="experiments/demo_2/", stdout=open(fp, "w"), shell=True)
+    p = subprocess.Popen("bash demo_2.sh 2", cwd="experiments/demo_2/", stdout=open(fp, "w"), shell=True)
     p_status = p.wait()
     with open(fp) as f:
         output = f.read()

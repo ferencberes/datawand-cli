@@ -37,7 +37,7 @@ class PythonScriptTask(luigi.Task):
 
     def run(self):
         fp = open(self.log_path, "w")
-        process = subprocess.Popen(["python", "-u", self.source_path], stdout=fp, stderr=fp)
+        process = subprocess.Popen(["python", "-u", self.source_path, self.task_namespace], stdout=fp, stderr=fp)
         self.keep_pid_while_running(process)
         fp.close()
         if process.returncode != 0:
@@ -78,9 +78,13 @@ class Master(luigi.Task):
 """)
 
 run_template = Template("""
-PYTHONPATH='.' luigi --module {{ name_space }} {{ name_space }}.{{task_name}}
+PYTHONPATH='.' luigi --module {{ name_space }} {{ name_space }}.{{task_name}} --workers $1
 """)
 
 run_local_template = Template("""
-PYTHONPATH='.' luigi --module {{ name_space }} {{ name_space }}.{{task_name}} --local-scheduler
+PYTHONPATH='.' luigi --module {{ name_space }} {{ name_space }}.{{task_name}} --local-scheduler --workers $1
 """)
+
+SUCCESS_MSG = "This progress looks :) because there were no failed tasks or missing dependencies"
+
+FAILURE_MSG = "This progress looks :( because there were failed tasks"

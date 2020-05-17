@@ -1,4 +1,4 @@
-import os, json
+import os
 from .utils import *
 from .repository_utils import get_repo, NO_DW_MSG
 from datawandcli.components.objects import Pipeline

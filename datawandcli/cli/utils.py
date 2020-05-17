@@ -8,6 +8,7 @@ from datawandcli.components.objects import Pipeline
 NO_DW_MSG = "Datawand was not enabled for your current folder!"
 PATH_MSG = "Provide path for pipeline json file"
 REPO_NAME_MSG = "Provide repository name"
+EXP_PATH = "Provide path for experiment json file"
 
 ### database ###
 
@@ -46,6 +47,8 @@ def list_of_json_in_subfolders(root_dir):
 def validate_config_json(json_path):
     valid_json = False
     has_clones = False
+    if not os.path.exists(json_path):
+        raise FileNotFoundError(json_path)
     try:
         pipe = Pipeline()
         pipe.load(json_path)
@@ -101,6 +104,27 @@ def list_pipelines(cursor, repo_table):
                 print(config_path)
         else:
             print("No pipeline was found!")
+        success = True
+    else:
+        print(NO_DW_MSG)
+    return success
+
+### experiments ###
+
+from datawandcli.cli.experiment_utils import experiment_status
+
+def list_experiments(cursor, repo_table):
+    success = False
+    cwd = os.getcwd()
+    repo_name, repo_path = get_repo(cursor, cwd, repo_table)
+    if repo_name != None:
+        experiments = collect_config_files(repo_path)[1]
+        if len(experiments) > 0:
+            for config_path in experiments:
+                status, success_rate = experiment_status(cursor, repo_table, config_path)
+                print("%s %s %s" % (config_path, status, success_rate))
+        else:
+            print("No experiment was found!")
         success = True
     else:
         print(NO_DW_MSG)

@@ -322,8 +322,6 @@ class Pipeline():
         if not isinstance(custom_config, dict):
             raise ValueError("Configuration must be specified in a dictionary!")
         if obj_name in self.parts:
-            #obj_config = self.default_config.copy()
-            #obj_config.update(custom_config)
             obj_config = custom_config
             cnt = self.num_clones.get(obj_name, 0)
             postfix = "_CLONE_%i" % (cnt+1)

@@ -2,6 +2,7 @@ import os, argparse
 from .utils import *
 from .repository_utils import *
 from .pipeline_utils import *
+from .experiment_utils import *
 
 def cli_parser():
     welcome_txt = "Welcome to datawand CLI. Happy coding! :)"
@@ -9,20 +10,27 @@ def cli_parser():
     subparsers = parser.add_subparsers(dest="command")
     _ = subparsers.add_parser("status", help="Get information about your current folder")
     _ = subparsers.add_parser("list", help="List available datawand repositories")
-    init_parser = subparsers.add_parser("init", help="Initialize new repository in your current folder")
-    init_parser.add_argument("name", help=REPO_NAME_MSG)
-    drop_parser = subparsers.add_parser("drop", help="Disable  repository by providing its name")
-    drop_parser.add_argument("name", help=REPO_NAME_MSG)
-    create_pipe = subparsers.add_parser("create", help="Create a new pipeline")
-    create_pipe.add_argument("name", help="Provide pipeline name")
-    copy_pipe = subparsers.add_parser("copy", help="Copy pipeline")
-    copy_pipe.add_argument("path", help=PATH_MSG + " to be copied")
-    copy_pipe.add_argument("name", help="Provide name for the new pipeline")
-    view_pipe = subparsers.add_parser("view", help="View pipeline (items)")
-    view_pipe.add_argument("path", help=PATH_MSG)
-    view_pipe.add_argument("--name", help="Select an object name from the pipeline")
-    delete_pipe = subparsers.add_parser("delete", help="Remove pipeline")
-    delete_pipe.add_argument("path", help=PATH_MSG)
+    init = subparsers.add_parser("init", help="Initialize new repository in your current folder")
+    init.add_argument("name", help=REPO_NAME_MSG)
+    drop = subparsers.add_parser("drop", help="Disable repository by providing its name")
+    drop.add_argument("name", help=REPO_NAME_MSG)
+    create = subparsers.add_parser("create", help="Create a new pipeline")
+    create.add_argument("name", help="Provide pipeline name")
+    copy = subparsers.add_parser("copy", help="Copy pipeline")
+    copy.add_argument("path", help=PATH_MSG + " to be copied")
+    copy.add_argument("name", help="Provide name for the new pipeline")
+    view = subparsers.add_parser("view", help="View pipeline (items)")
+    view.add_argument("path", help=PATH_MSG)
+    view.add_argument("--name", help="Select an object name from the pipeline")
+    delete = subparsers.add_parser("delete", help="Remove pipeline")
+    delete.add_argument("path", help=PATH_MSG)
+    run = subparsers.add_parser("run", help="Run experiment")
+    run.add_argument("path", help=PATH_MSG)
+    run.add_argument("--workers", help="Set the number luigi workers to enable parallel execution")
+    clear = subparsers.add_parser("clear", help="Clear experiment")
+    clear.add_argument("path", help=PATH_MSG)
+    kill = subparsers.add_parser("kill", help="Kill  experiment processes")
+    kill.add_argument("path", help=PATH_MSG)
     return parser
 
 def execute():
@@ -57,6 +65,16 @@ def execute():
         success = remove_pipeline(args.path)
         if success:
             print("The pipeline was deleted")
+    elif args.command == "run":
+        success = run_experiment(c, repos_table, args.path, args.workers)
+        if success:
+            print("Experiment script was started")
+    elif args.command == "clear":
+        success = clear_experiment(c, repos_table, args.path)
+        if success:
+            print("Experiment was cleared")
+    elif args.command == "kill":
+        success = kill_experiment(c, repos_table, args.path)
     else:
         parser.print_help()
     # close database connection

@@ -46,4 +46,6 @@ def status_repo(cursor, repo_table):
         print("Number of experiments: %i" % len(experiments))
         print("### Pipelines ###")
         success = list_pipelines(cursor, repo_table)
+        print("### Experiments with status ###")
+        success = list_experiments(cursor, repo_table)
     return success
