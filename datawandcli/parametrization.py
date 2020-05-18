@@ -9,6 +9,9 @@ class ParamHelper():
         self._execution_path = args[0]
         self._load_pipeline()
         self._load_custom_config()
+        item_config = self.default_config.copy()
+        item_config.update(self.custom_config)
+        print(item_config)
     
     @property
     def base_dir(self):
@@ -37,15 +40,11 @@ class ParamHelper():
         pipe = Pipeline()
         pipe.load(self.path)
         self.pipeline = pipe
-        print(self.pipeline.config)
         
     def _load_custom_config(self):
         conf = {}
         for name, obj in self.pipeline.parts.items():
-            #if self.pipeline.base_dir == "":
             fp = obj.path
-            #else:
-            #    fp = self.pipeline.base_dir + "/" + obj.path
             if fp == self._execution_path:
                 conf = obj.config
                 break
@@ -82,7 +81,6 @@ class ConfigGenerator():
         self._configurables = []
         self.pipeline = Pipeline()
         self.pipeline.load(pipe_path, self.experiment_name, self.experiment_dir)
-        print(self.pipeline.name, self.pipeline.experiment_name)
         for name, item in self.pipeline.parts.items():
             if isinstance(item, Configurable):
                 self._configurables.append(name)
@@ -103,10 +101,13 @@ class ConfigGenerator():
         for name in to_be_removed:
             self.pipeline.remove(name)
         # save pipeline
-        self.pipeline.save()
+        output_path = self.pipeline.save()
         # generate luigi plan
         if with_luigi:
             self.generate_luigi_plan(local_scheduler)
+        print("### New experiment was created ###")
+        print("Name:", self.pipeline.experiment_name)
+        print("Path:", output_path)
         
     def generate_luigi_plan(self, local_scheduler=False):
         clones = []

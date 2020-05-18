@@ -219,13 +219,14 @@ class Pipeline():
         if output_folder == "":
             output_path = "%s.json" % self.name
         else:
-            output_path = "%s/%s.json" % (output_folder, self.name)
+            output_path = os.path.join(output_folder, "%s.json" % self.name)
         with open(output_path, 'w') as f:
             json.dump(self.config, f, sort_keys=True, indent="    ")
         for obj in self.modules:
             self._duplicate_file(obj.path, obj.path)
         if self.verbose:
             print("Pipeline was SAVED")
+        return output_path
     
     def load(self, config_path, experiment_name=None, experiment_dir=None):
         ext = config_path.split(".")[-1]

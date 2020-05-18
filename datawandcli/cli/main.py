@@ -25,14 +25,17 @@ def cli_parser():
     delete = subparsers.add_parser("delete", help="Remove pipeline")
     delete.add_argument("path", help=PATH_MSG)
     run = subparsers.add_parser("run", help="Run experiment")
-    run.add_argument("path", help=PATH_MSG)
+    run.add_argument("path", help=EXP_PATH)
     run.add_argument("--workers", help="Set the number luigi workers to enable parallel execution")
+    log = subparsers.add_parser("log", help="View experiment logs")
+    log.add_argument("path", help=EXP_PATH)
+    log.add_argument("--name", help="Select an object name from the pipeline")
     clear = subparsers.add_parser("clear", help="Clear experiment")
-    clear.add_argument("path", help=PATH_MSG)
+    clear.add_argument("path", help=EXP_PATH)
     kill = subparsers.add_parser("kill", help="Kill  experiment processes")
-    kill.add_argument("path", help=PATH_MSG)
+    kill.add_argument("path", help=EXP_PATH)
     return parser
-
+    
 def execute():
     # init environment
     repos_table = "repositories"
@@ -75,6 +78,8 @@ def execute():
             print("Experiment was cleared")
     elif args.command == "kill":
         success = kill_experiment(c, repos_table, args.path)
+    elif args.command == "log":
+        success = log_experiment(c, repos_table, args.path, args.name)
     else:
         parser.print_help()
     # close database connection

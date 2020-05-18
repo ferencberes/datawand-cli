@@ -91,6 +91,37 @@ def clear_experiment(cursor, repo_table, file_path):
         print(NO_DW_MSG)
     return success
 
+def log_experiment(cursor, repo_table, file_path, name, delim="/"):
+    success = False
+    cwd = os.getcwd()
+    repo_name, repo_path = get_repo(cursor, cwd, repo_table)
+    if repo_name != None:
+        is_valid, is_experiment = validate_config_json(file_path)
+        if is_experiment:
+            _, _, master_log, _, log_files = get_paths(file_path, repo_path)
+            if name == None:
+                log_file = master_log
+            else:
+                log_file = None
+                for fp in log_files:
+                    fname = fp.split(delim)[-1]
+                    ext = fp.split(".")[-1]
+                    fname = fname.replace("."+ext,"")
+                    if name == fname:
+                        log_file = fp
+                        break
+            if log_file != None:
+                with open(log_file) as f:
+                    print(f.read())
+                success = True
+            else:
+                print("Log file was not found!")
+        else:
+            print(EXP_PATH)
+    else:
+        print(NO_DW_MSG)
+    return success
+
 def kill_experiment(cursor, repo_table, file_path):
     success = False
     cwd = os.getcwd()
