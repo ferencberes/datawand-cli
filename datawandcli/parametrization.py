@@ -1,4 +1,5 @@
 import os
+from datawandcli.cli.utils import get_luigi_conf
 from datawandcli.components.objects import Pipeline, Configurable, ModuleObject
 from datawandcli.components.luigi import *
 
@@ -137,6 +138,6 @@ import luigi
             if local_scheduler:
                 f.write(run_local_template.render(name_space=self.pipeline.experiment_name, task_name="Master"))
             else:
-                f.write(run_template.render(name_space=self.pipeline.experiment_name, task_name="Master"))
+                luigi_cfg_path = f.write(run_template.render(cfg_path=get_luigi_conf(), name_space=self.pipeline.experiment_name, task_name="Master"))
         print("Luigi plan was generated")
         

@@ -78,6 +78,7 @@ class Master(luigi.Task):
 """)
 
 run_template = Template("""
+export LUIGI_CONFIG_PATH={{ cfg_path }};
 PYTHONPATH='.' luigi --module {{ name_space }} {{ name_space }}.{{task_name}} --workers $1
 """)
 

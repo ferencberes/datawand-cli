@@ -34,12 +34,17 @@ def cli_parser():
     clear.add_argument("path", help=EXP_PATH)
     kill = subparsers.add_parser("kill", help="Kill  experiment processes")
     kill.add_argument("path", help=EXP_PATH)
+    scheduler = subparsers.add_parser("scheduler", help="Interact with luigi scheduler")
+    scheduler.add_argument("action", choices=['start', 'status', 'stop'])
+    scheduler.add_argument("--port", help="Select the port for luigi central scheduler")
+    scheduler.add_argument("--remove", help="Number of seconds after which task history is cleared")
+    scheduler.add_argument("--retry", help="Number of seconds after which failed tasks are re-executed again")
     return parser
     
 def execute():
     # init environment
     repos_table = "repositories"
-    conn, c = prepare_environment(repos_table)
+    conn, c, config_dir = prepare_environment(repos_table)
     
     # parse arguments
     parser = cli_parser()
@@ -80,6 +85,15 @@ def execute():
         success = kill_experiment(c, repos_table, args.path)
     elif args.command == "log":
         success = log_experiment(c, repos_table, args.path, args.name)
+    elif args.command == "scheduler":
+        if args.action == "start":
+            start_luigi(args.port, args.remove, args.retry)
+        elif args.action == "status":
+            find_luigi(False)
+        elif args.action == "stop":
+            find_luigi(True)
+        else:
+            raise ValueError("Invalid option")
     else:
         parser.print_help()
     # close database connection
