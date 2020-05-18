@@ -56,6 +56,7 @@ def test_demo_1_run():
     assert "sample_CLONE_1.py task was executed!" in output
     assert "sample_CLONE_2.py task was executed!" in output
 
+
 def test_demo_1_output():
     out_1 = load_last_line("experiments/demo_1/examples/sample_CLONE_1.log")
     out_2 = load_last_line("experiments/demo_1/examples/sample_CLONE_2.log")
