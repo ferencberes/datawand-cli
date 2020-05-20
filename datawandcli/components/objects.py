@@ -212,6 +212,13 @@ class Pipeline():
             os.makedirs(fp_dir)
         if old_path != fp:
             copyfile(old_path, fp)
+        # check for __init__.py files
+        splitted = old_path.split(delim)
+        if len(splitted) > 1 and "__init__.py" != splitted[-1]:
+            old_dir = delim.join(splitted[:-1])
+            if "__init__.py" in os.listdir(old_dir):
+                init_path = os.path.join(old_dir, "__init__.py")
+                self._duplicate_file(init_path, init_path)
     
     def save(self, output_folder=None):
         if output_folder == None:
