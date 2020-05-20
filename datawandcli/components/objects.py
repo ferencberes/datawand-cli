@@ -234,7 +234,7 @@ class Pipeline():
             with open(config_path) as f:
                 config = json.load(f)
             self.name = config["name"]
-            self.experiment_name = config["experiment_name"] if experiment_name == None else experiment_name
+            self.experiment_name = config.get("experiment_name","") if experiment_name == None else experiment_name
             self.base_dir = config.get("base_dir","") if experiment_dir == None else experiment_dir
             self.description = config["description"]
             self.default_config = config.get("default_config",{})
@@ -245,11 +245,11 @@ class Pipeline():
                 self.add(mod)
             # parse notebooks
             for item in config["notebooks"]:
-                nb = NotebookObject(item["name"], item["type"], item["path"], item["is_clone"]=="yes", item["config"])
+                nb = NotebookObject(item["name"], item["type"], item["path"], item["is_clone"]=="yes", item.get("config",dict()))
                 self.add(nb)
             # parse scripts
             for item in config["py_scripts"]:
-                ps = PyScriptObject(item["name"], item["type"], item["path"], item["is_clone"]=="yes", item["config"])
+                ps = PyScriptObject(item["name"], item["type"], item["path"], item["is_clone"]=="yes", item.get("config",dict()))
                 self.add(ps)
             # parse dependencies
             for item in config["notebooks"] + config["py_scripts"]:
