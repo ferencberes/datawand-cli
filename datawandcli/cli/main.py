@@ -11,7 +11,7 @@ def cli_parser():
     _ = subparsers.add_parser("status", help="Get information about your current folder")
     _ = subparsers.add_parser("list", help="List available datawand repositories")
     init = subparsers.add_parser("init", help="Initialize new repository in your current folder")
-    init.add_argument("name", help=REPO_NAME_MSG)
+    init.add_argument("--name", help=REPO_NAME_MSG)
     drop = subparsers.add_parser("drop", help="Disable repository by providing its name")
     drop.add_argument("name", help=REPO_NAME_MSG)
     create = subparsers.add_parser("create", help="Create a new pipeline")
