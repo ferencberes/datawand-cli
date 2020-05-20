@@ -36,8 +36,11 @@ class PythonScriptTask(luigi.Task):
         os.remove(self.pid_path)
 
     def run(self):
+        delim = "/"
+        splitted = self.source_path.split(delim)
+        script_dir, script_name = delim.join(splitted[:-1]), splitted[-1]
         fp = open(self.log_path, "w")
-        process = subprocess.Popen(["python", "-u", self.source_path, self.task_namespace], stdout=fp, stderr=fp)
+        process = subprocess.Popen(["python", "-u", script_name, self.task_namespace], cwd=script_dir, stdout=fp, stderr=fp)
         self.keep_pid_while_running(process)
         fp.close()
         if process.returncode != 0:

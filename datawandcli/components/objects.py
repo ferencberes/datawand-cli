@@ -64,8 +64,9 @@ class Base():
         ext = value.split(".")[-1]
         if ext not in self._extensions:
             raise ValueError("Invalid file extension '%s'! It must be '.%s'." % (str(ext), str(self._extensions)))
-        if not os.path.exists(value) and not self.is_clone:
-            raise FileNotFoundError(value)
+        #if not os.path.exists(value) and not self.is_clone:
+        #    print("FileNotFound:", value)
+	#    raise FileNotFoundError(value)
         self._path = value
     
     def get(self, deps=[]):

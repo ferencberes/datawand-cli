@@ -44,9 +44,11 @@ class ParamHelper():
         
     def _load_custom_config(self):
         conf = {}
+        executed_file = self._execution_path.split("/")[-1]
         for name, obj in self.pipeline.parts.items():
             fp = obj.path
-            if fp == self._execution_path:
+            fname = fp.split("/")[-1]
+            if fname == executed_file:
                 conf = obj.config
                 break
         self._custom_config = conf
