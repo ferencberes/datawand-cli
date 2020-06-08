@@ -13,17 +13,17 @@ datawand delete pipeline1.json
 echo
 datawand delete pipeline2.json
 echo
-datawand scheduler start --port 8085
+datawand scheduler start --port 8085 --keep 1800 --retry 900
 echo
 python trial_parameters.py
 echo
 datawand view experiments/demo_1/Trial.json
 echo
-datawand view experiments/demo_1/Trial.json --name sample_CLONE_1
+datawand view experiments/demo_1/Trial.json --name PySample_CLONE_1
 echo
-datawand view experiments/demo_1/Trial.json --name sample_CLONE_2
+datawand view experiments/demo_1/Trial.json --name PySample_CLONE_2
 echo
-datawand view experiments/demo_1/Trial.json --name sample_CLONE_2
+datawand view experiments/demo_1/Trial.json --name PySample_CLONE_2
 echo
 datawand status
 echo
@@ -40,6 +40,10 @@ datawand status
 echo "Sleeping for 1 minutes"
 sleep 60
 datawand status
+datawand log experiments/demo_1/Trial.json --tail 10
+datawand log experiments/demo_1/Trial.json --name PySample_CLONE_1
+datawand log experiments/demo_1/Trial.json --name PySample_CLONE_2 --tail 30
+datawand log experiments/demo_1/Trial.json --name PySample_CLONE_3 --all
 echo
 datawand clear experiments/demo_1/Trial.json
 echo

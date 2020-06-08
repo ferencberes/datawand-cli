@@ -27,7 +27,7 @@ class ParamHelper():
         if self.base_dir == "":
             return "%s.json" % self.pipeline_name
         else:
-            return "%s/%s.json" % (self.base_dir, self.pipeline_name)
+            return os.path.join(self.base_dir, self.pipeline_name + ".json")
         
     @property
     def default_config(self):
@@ -44,10 +44,10 @@ class ParamHelper():
         
     def _load_custom_config(self):
         conf = {}
-        executed_file = self._execution_path.split("/")[-1]
+        executed_file = os.path.split(self._execution_path)[1]
         for name, obj in self.pipeline.parts.items():
             fp = obj.path
-            fname = fp.split("/")[-1]
+            fname = os.path.split(fp)[1]
             if fname == executed_file:
                 conf = obj.config
                 break
@@ -134,9 +134,9 @@ import luigi
             plan += pyscript_template.render(name=obj.name, path=obj.path, config=obj.config, name_space=experiment_name, deps=deps)
             plan += "\n"
         plan += master_template.render(config=self.pipeline.default_config, name_space=experiment_name, deps=dependency_extractor([obj.name for obj in clones]))
-        with open("%s/%s.py" % (self.pipeline.base_dir, experiment_name), 'w') as f:
+        with open(os.path.join(self.pipeline.base_dir, experiment_name + ".py"), 'w') as f:
             f.write(plan)
-        with open("%s/%s.sh" % (self.pipeline.base_dir, experiment_name), 'w') as f:
+        with open(os.path.join(self.pipeline.base_dir, experiment_name + ".sh"), 'w') as f:
             if local_scheduler:
                 f.write(run_local_template.render(name_space=self.pipeline.experiment_name, task_name="Master"))
             else:

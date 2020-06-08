@@ -6,24 +6,20 @@ from jinja2 import Template
 class PythonScriptTask(luigi.Task):
     
     @property
+    def source_dir(self):
+        return os.path.split(self.source_path)[0]
+    
+    @property
     def info_path(self):
-        return ".".join(self.source_path.split(".")[:-1]) + ".info"
+        return os.path.join(self.source_dir, self.task_name + ".info")
     
     @property
     def pid_path(self):
-        return ".".join(self.source_path.split(".")[:-1]) + ".pid"
+        return os.path.join(self.source_dir, self.task_name + ".pid")
     
     @property
     def log_path(self):
-        return ".".join(self.source_path.split(".")[:-1]) + ".log"
-    
-    @property
-    def source_dir(self):
-        return "/".join(self.source_path.split("/")[:-1])
-    
-    @property
-    def task_name(self):
-        return self.source_path.split("/")[-1]
+        return os.path.join(self.source_dir, self.task_name + ".log")
     
     def output(self):
         return luigi.LocalTarget(self.info_path)
@@ -36,9 +32,7 @@ class PythonScriptTask(luigi.Task):
         os.remove(self.pid_path)
 
     def run(self):
-        delim = "/"
-        splitted = self.source_path.split(delim)
-        script_dir, script_name = delim.join(splitted[:-1]), splitted[-1]
+        script_dir, script_name = os.path.split(self.source_path)
         fp = open(self.log_path, "w")
         process = subprocess.Popen(["python", "-u", script_name, self.task_namespace], cwd=script_dir, stdout=fp, stderr=fp)
         self.keep_pid_while_running(process)
@@ -61,6 +55,7 @@ pyscript_template = Template("""
 class {{ name }}(PythonScriptTask):
     params = luigi.parameter.DictParameter(default={{ config }})
     source_path = "{{ path }}"
+    task_name = "{{ name }}"
     task_namespace = "{{ name_space }}"
     {% if deps|length > 0 %}
     def requires(self):

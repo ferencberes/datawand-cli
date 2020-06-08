@@ -12,10 +12,10 @@ def get_paths(json_path, repo_path):
     status_files, log_files = [], []
     for item in pipe_obj.notebooks+pipe_obj.pyscripts:
         if item.is_clone:
-            tmp_path = item.path
-            ext = tmp_path.split(".")[-1]
-            status_path = os.path.join(repo_path, pipe_obj.base_dir, tmp_path.replace(ext,"info"))
-            log_path = os.path.join(repo_path, pipe_obj.base_dir, tmp_path.replace(ext,"log"))
+            tmp_dir = os.path.split(item.path)[0]
+            tmp_name = item.name
+            status_path = os.path.join(repo_path, pipe_obj.base_dir, tmp_dir, tmp_name + ".info")
+            log_path = os.path.join(repo_path, pipe_obj.base_dir, tmp_dir, tmp_name + ".log")
             status_files.append(status_path)
             log_files.append(log_path)
     return executable_folder, executable_name, master_log, status_files, log_files
@@ -108,7 +108,7 @@ def log_experiment(cursor, repo_table, file_path, name, tail_num, show_all, deli
                     if name == fname:
                         log_file = fp
                         break
-            if log_file != None:
+            if log_file != None and os.path.exists(log_file):
                 with open(log_file) as f:
                     if show_all:
                         print(f.read())

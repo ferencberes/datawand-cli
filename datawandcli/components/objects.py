@@ -3,7 +3,7 @@ from shutil import copyfile
 from jinja2 import Template
 from .templates import NOTEBOOK_SAMPLE, PY_SAMPLE
 
-def create_object(path, pipeline_name, obj_type, delimeter="/"):
+def create_object(path, pipeline_name, obj_type, delim=os.path.sep):
     success = False
     if obj_type == "module":
         content = ""
@@ -14,8 +14,9 @@ def create_object(path, pipeline_name, obj_type, delimeter="/"):
             template = Template(NOTEBOOK_SAMPLE)
         else:
             raise ValueError("Choose object_type from values ['pyscript','notebook','module']!")
-        depth = len(path.split(delimeter))-1
-        content = template.render(rel_path="../"*depth, pipeline_name=pipeline_name)
+        depth = len(path.split(delim))-1
+        parent_dir = ".." + os.path.sep
+        content = template.render(rel_path=parent_dir*depth, pipeline_name=pipeline_name)
     with open(path, 'w') as f:
         f.write(content)
     success = True
@@ -204,19 +205,18 @@ class Pipeline():
         conf["py_scripts"] = [item.get(self.dependencies.get(item.name, [])) for item in self.pyscripts]
         return conf
     
-    def _duplicate_file(self, old_path, new_path, delim="/"):
+    def _duplicate_file(self, old_path, new_path):
         fp = str(new_path)
         if self.base_dir != "":
-            fp = self.base_dir + delim + fp
-        fp_dir = delim.join(fp.split(delim)[:-1])
+            fp = os.path.join(self.base_dir, fp)
+        fp_dir, _ = os.path.split(fp)
         if not os.path.exists(fp_dir):
             os.makedirs(fp_dir)
         if old_path != fp:
             copyfile(old_path, fp)
         # check for __init__.py files
-        splitted = old_path.split(delim)
-        if len(splitted) > 1 and "__init__.py" != splitted[-1]:
-            old_dir = delim.join(splitted[:-1])
+        old_dir, old_file = os.path.split(old_path)
+        if old_dir != '' and "__init__.py" != old_file:
             if "__init__.py" in os.listdir(old_dir):
                 init_path = os.path.join(old_dir, "__init__.py")
                 self._duplicate_file(init_path, init_path)
