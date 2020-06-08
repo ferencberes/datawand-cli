@@ -36,10 +36,7 @@ retry-delay=%i
 """ % (luigi_port, remove_sec, retry_sec))
     return luigi_conf
 
-def start_luigi(port, remove_sec, retry_sec):
-    luigi_port = 8082 if port == None else int(port)
-    remove_sec = 900 if remove_sec == None else int(remove_sec)
-    retry_sec = remove_sec+900 if retry_sec == None else int(retry_sec)
+def start_luigi(luigi_port=8082, remove_sec=3600, retry_sec=1800):
     luigi_dir = get_luigi_dir()
     if not os.path.exists(luigi_dir):
         os.makedirs(luigi_dir)

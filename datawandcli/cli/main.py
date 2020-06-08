@@ -26,19 +26,21 @@ def cli_parser():
     delete.add_argument("path", help=PATH_MSG)
     run = subparsers.add_parser("run", help="Run experiment")
     run.add_argument("path", help=EXP_PATH)
-    run.add_argument("--workers", help="Set the number luigi workers to enable parallel execution")
+    run.add_argument("--workers", type=int, default=1, help="Number luigi workers to enable parallel execution (default: 1)")
     log = subparsers.add_parser("log", help="View experiment logs")
     log.add_argument("path", help=EXP_PATH)
     log.add_argument("--name", help="Select an object name from the pipeline")
+    log.add_argument("--tail", type=int, default=20, help="Show the last few lines (default: 20)")
+    log.add_argument("--all", action="store_true", help="Show every row (default: last 20 rows are shown)")
     clear = subparsers.add_parser("clear", help="Clear experiment")
     clear.add_argument("path", help=EXP_PATH)
     kill = subparsers.add_parser("kill", help="Kill  experiment processes")
     kill.add_argument("path", help=EXP_PATH)
     scheduler = subparsers.add_parser("scheduler", help="Interact with luigi scheduler")
-    scheduler.add_argument("action", choices=['start', 'status', 'stop'])
-    scheduler.add_argument("--port", help="Select the port for luigi central scheduler")
-    scheduler.add_argument("--remove", help="Number of seconds after which task history is cleared")
-    scheduler.add_argument("--retry", help="Number of seconds after which failed tasks are re-executed again")
+    scheduler.add_argument("action", choices=['start', 'status', 'stop'], help="Choose scheduler action")
+    scheduler.add_argument("--port", type=int, default=8082, help="Select the port for luigi central scheduler (default: 8082).")
+    scheduler.add_argument("--keep", type=int, default=3600, help="Number of seconds until task history is cleared (default: 60 minutes).")
+    scheduler.add_argument("--retry", type=int, default=1800, help="Number of seconds until failed tasks are re-executed (default: 30 minutes). Failed tasks are only re-tried if this value is smaller than the --keep argument.")
     return parser
     
 def execute():
@@ -84,10 +86,10 @@ def execute():
     elif args.command == "kill":
         success = kill_experiment(c, repos_table, args.path)
     elif args.command == "log":
-        success = log_experiment(c, repos_table, args.path, args.name)
+        success = log_experiment(c, repos_table, args.path, args.name, args.tail, args.all)
     elif args.command == "scheduler":
         if args.action == "start":
-            start_luigi(args.port, args.remove, args.retry)
+            start_luigi(args.port, args.keep, args.retry)
         elif args.action == "status":
             find_luigi(False)
         elif args.action == "stop":

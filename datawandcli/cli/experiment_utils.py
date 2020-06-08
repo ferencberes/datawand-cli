@@ -46,10 +46,8 @@ def experiment_status(cursor, repo_table, file_path):
         print(NO_DW_MSG)
     return status, success_rate
 
-def run_experiment(cursor, repo_table, file_path, workers, delim="/"):
+def run_experiment(cursor, repo_table, file_path, workers=1, delim="/"):
     success = False
-    if workers == None:
-        workers = 1
     cwd = os.getcwd()
     repo_name, repo_path = get_repo(cursor, cwd, repo_table)
     if repo_name != None:
@@ -91,7 +89,7 @@ def clear_experiment(cursor, repo_table, file_path):
         print(NO_DW_MSG)
     return success
 
-def log_experiment(cursor, repo_table, file_path, name, delim="/"):
+def log_experiment(cursor, repo_table, file_path, name, tail_num, show_all, delim="/"):
     success = False
     cwd = os.getcwd()
     repo_name, repo_path = get_repo(cursor, cwd, repo_table)
@@ -112,7 +110,11 @@ def log_experiment(cursor, repo_table, file_path, name, delim="/"):
                         break
             if log_file != None:
                 with open(log_file) as f:
-                    print(f.read())
+                    if show_all:
+                        print(f.read())
+                    else:
+                        lines = f.readlines()
+                        print("".join(lines[-tail_num:]))
                 success = True
             else:
                 print("Log file was not found!")
