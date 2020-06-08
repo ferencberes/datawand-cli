@@ -89,6 +89,6 @@ run_local_template = Template("""
 PYTHONPATH='.' luigi --module {{ name_space }} {{ name_space }}.{{task_name}} --local-scheduler --workers $1
 """)
 
-SUCCESS_MSG = "This progress looks :) because there were no failed tasks or missing dependencies"
+SUCCESS_MSG = "This progress looks :)"
 
-FAILURE_MSG = "This progress looks :( because there were failed tasks"
+FAILURE_MSG = "This progress looks :("

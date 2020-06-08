@@ -152,8 +152,8 @@ class Pipeline():
     
     @base_dir.setter
     def base_dir(self, value):
-        if value != "" and not os.path.exists(value):
-            os.makedirs(value)
+        #if value != "" and not os.path.exists(value):
+        #    os.makedirs(value)
         self._base_dir = value
         
     @experiment_name.setter
