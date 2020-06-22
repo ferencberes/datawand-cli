@@ -98,7 +98,7 @@ class ConfigGenerator():
                     if dep_nc > 0:
                         clone_deps = ["%s_CLONE_%i" % (dep,j) for j in range(1,dep_nc+1)]
                         for i in range(1, item_nc+1):
-                            self.pipeline.add_dependencies("%s_CLONE_%i" % (item,i), clone_deps, reset=True)
+                            self.pipeline.add_dependencies("%s_CLONE_%i" % (item,i), clone_deps)
     
     def save_params(self, default_config, custom_config={}, with_luigi=True, local_scheduler=False):
         self.pipeline.default_config = default_config
