@@ -13,12 +13,14 @@ def load_last_line(fp):
 def test_create_pipeline():
     pipe = Pipeline("Trial")
     mod = ModuleObject("my_module","","examples/my_module.py")
+    nb = NotebookObject("Sleep", "", "examples/Sleep.ipynb")
     pys = PyScriptObject("PySample","","examples/sample.py")
     pipe.add(mod)
+    pipe.add(nb)
     pipe.add(pys)
     pipe.save()
     print(pipe.config)
-    assert len(pipe.parts)==2
+    assert len(pipe.parts) == 3
     
 def test_demo_1_init():
     cg = ConfigGenerator("Trial.json", experiment_name="demo_1", experiment_dir="experiments/demo_1/")
@@ -31,10 +33,12 @@ def test_demo_1_init():
         PARAMETERS[item] = []
     PARAMETERS["PySample"].append({"p1":1.0,"p2":0.5})
     PARAMETERS["PySample"].append({"p1":0.0,"p2":1.0})
+    PARAMETERS["Sleep"].append({})
     cg.save_params(DEFAULTS, PARAMETERS, local_scheduler=True)
     cg.pipeline.save()
-    assert len(cg.pipeline.parts) == 3
+    assert len(cg.pipeline.parts) == 4
     assert cg.pipeline.num_clones["PySample"] == 2
+    assert cg.pipeline.num_clones["Sleep"] == 1
 
 def test_demo_1_params():
     pipe = Pipeline()
@@ -55,14 +59,16 @@ def test_demo_1_run():
     print(output)
     assert "PySample_CLONE_1 task was executed!" in output
     assert "PySample_CLONE_2 task was executed!" in output
+    assert "Sleep_CLONE_1 task was executed!" in output
 
 def test_demo_1_output():
     out_1 = load_last_line("experiments/demo_1/examples/PySample_CLONE_1.log")
     out_2 = load_last_line("experiments/demo_1/examples/PySample_CLONE_2.log")
+    assert os.path.exists("experiments/demo_1/examples/Sleep_CLONE_1.log")
     rmtree("experiments/demo_1/")
     assert out_1 == "1.0 0.5 default"
     assert out_2 == "0.0 1.0 default"
-    
+
 def test_demo_2_init():
     cg = ConfigGenerator("Trial.json", experiment_name="demo_2", experiment_dir="experiments/demo_2/")
     DEFAULTS = {}

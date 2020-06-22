@@ -3,8 +3,7 @@ from jinja2 import Template
 
 ### Task Abstraction ###
 
-class PythonScriptTask(luigi.Task):
-    
+class BaseTask(luigi.Task):
     @property
     def source_dir(self):
         return os.path.split(self.source_path)[0]
@@ -32,16 +31,27 @@ class PythonScriptTask(luigi.Task):
         os.remove(self.pid_path)
 
     def run(self):
-        script_dir, script_name = os.path.split(self.source_path)
+        resource_dir, resource_name = os.path.split(self.source_path)
         fp = open(self.log_path, "w")
-        process = subprocess.Popen(["python", "-u", script_name, self.task_namespace], cwd=script_dir, stdout=fp, stderr=fp)
+        # NOTE: namespace must be given in order to be able to kill the processes successfully!
+        process = subprocess.Popen(self.execution_command(resource_name, self.task_namespace), cwd=resource_dir, stdout=fp, stderr=fp)
         self.keep_pid_while_running(process)
         fp.close()
         if process.returncode != 0:
-            raise RuntimeError("Error when executing a python script!")
+            raise RuntimeError("Error during execution!")
         with open(self.output().fn, "w") as fout:
             fout.write('OK')
         print("%s task was executed!" % self.task_name)
+        
+class PythonScriptTask(BaseTask):
+    def execution_command(self, resource_name, namespace):
+        return ["python", "-u", resource_name, namespace]
+    
+class NotebookTask(BaseTask):
+    def execution_command(self, resource_name, namespace):
+        return ["jupyter", "nbconvert", "--ExecutePreprocessor.timeout=None", "--execute", "--to", "notebook", resource_name, "--output", resource_name, namespace]
+    
+### Task templates ###
 
 def dependency_extractor(deps):
     out = ""
@@ -50,9 +60,10 @@ def dependency_extractor(deps):
         if i != len(deps)-1:
             out += ", "
     return out
-        
-pyscript_template = Template("""
-class {{ name }}(PythonScriptTask):
+
+def base_task_template_factory(task_type):
+    return Template("""
+class {{ name }}(""" + task_type + """):
     params = luigi.parameter.DictParameter(default={{ config }})
     source_path = "{{ path }}"
     task_name = "{{ name }}"
@@ -63,7 +74,9 @@ class {{ name }}(PythonScriptTask):
     {% endif %}
 """)
 
-master_template = Template("""
+PYSCRIPT_TEMPLATE = base_task_template_factory("PythonScriptTask")
+NOTEBOOK_TEMPLATE = base_task_template_factory("NotebookTask")
+MASTER_TEMPLATE = Template("""
 class Master(luigi.Task):
     params = luigi.parameter.DictParameter(default={{ config }})
     task_namespace = "{{ name_space }}"
@@ -75,15 +88,14 @@ class Master(luigi.Task):
         print("All dependencies are done")
 """)
 
-run_template = Template("""
+RUN_TEMPLATE = Template("""
 export LUIGI_CONFIG_PATH={{ cfg_path }};
 PYTHONPATH='.' luigi --module {{ name_space }} {{ name_space }}.{{task_name}} --workers $1
 """)
 
-run_local_template = Template("""
+RUN_LOCAL_TEMPLATE = Template("""
 PYTHONPATH='.' luigi --module {{ name_space }} {{ name_space }}.{{task_name}} --local-scheduler --workers $1
 """)
 
 SUCCESS_MSG = "This progress looks :)"
-
 FAILURE_MSG = "This progress looks :("

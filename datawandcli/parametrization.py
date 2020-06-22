@@ -1,6 +1,6 @@
 import os
 from datawandcli.cli.utils import get_luigi_conf
-from datawandcli.components.objects import Pipeline, Configurable, ModuleObject
+from datawandcli.components.objects import Pipeline, Configurable, ModuleObject, PyScriptObject, NotebookObject
 from datawandcli.components.luigi import *
 
 class ParamHelper():
@@ -118,7 +118,7 @@ class ConfigGenerator():
             if obj.is_clone:
                 clones.append(obj)
         plan = """
-from datawandcli.components.luigi import PythonScriptTask
+from datawandcli.components.luigi import PythonScriptTask, NotebookTask
 import luigi
         """
         experiment_name = self.pipeline.experiment_name
@@ -131,15 +131,20 @@ import luigi
                 deps = dependency_extractor(self.pipeline.dependencies[obj.name])
             else:
                 deps = ""
-            plan += pyscript_template.render(name=obj.name, path=obj.path, config=obj.config, name_space=experiment_name, deps=deps)
+            if isinstance(obj, PyScriptObject):
+                plan += PYSCRIPT_TEMPLATE.render(name=obj.name, path=obj.path, config=obj.config, name_space=experiment_name, deps=deps)
+            elif isinstance(obj, NotebookObject):
+                plan += NOTEBOOK_TEMPLATE.render(name=obj.name, path=obj.path, config=obj.config, name_space=experiment_name, deps=deps)
+            else:
+                raise RuntimeError("Unsupported task object was detected %s!" % obj.name)
             plan += "\n"
-        plan += master_template.render(config=self.pipeline.default_config, name_space=experiment_name, deps=dependency_extractor([obj.name for obj in clones]))
+        plan += MASTER_TEMPLATE.render(config=self.pipeline.default_config, name_space=experiment_name, deps=dependency_extractor([obj.name for obj in clones]))
         with open(os.path.join(self.pipeline.base_dir, experiment_name + ".py"), 'w') as f:
             f.write(plan)
         with open(os.path.join(self.pipeline.base_dir, experiment_name + ".sh"), 'w') as f:
             if local_scheduler:
-                f.write(run_local_template.render(name_space=self.pipeline.experiment_name, task_name="Master"))
+                f.write(RUN_LOCAL_TEMPLATE.render(name_space=self.pipeline.experiment_name, task_name="Master"))
             else:
-                luigi_cfg_path = f.write(run_template.render(cfg_path=get_luigi_conf(), name_space=self.pipeline.experiment_name, task_name="Master"))
+                luigi_cfg_path = f.write(RUN_TEMPLATE.render(cfg_path=get_luigi_conf(), name_space=self.pipeline.experiment_name, task_name="Master"))
         print("Luigi plan was generated")
         
