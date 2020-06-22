@@ -79,7 +79,7 @@ class ConfigGenerator():
     @property
     def pipeline_cfg(self):
         return self.pipeline.config
-        
+    
     def _load(self, pipe_path):
         self._configurables = []
         self.pipeline = Pipeline()
@@ -87,15 +87,29 @@ class ConfigGenerator():
         for name, item in self.pipeline.parts.items():
             if isinstance(item, Configurable):
                 self._configurables.append(name)
-                
+    
+    def _resolve_clone_dependencies(self):
+        tuples = list(self.pipeline.dependencies.items())
+        for item, dependencies in tuples:
+            item_nc = self.pipeline.num_clones.get(item, 0)
+            if item_nc > 0:
+                for dep in dependencies:
+                    dep_nc = self.pipeline.num_clones.get(dep, 0)
+                    if dep_nc > 0:
+                        clone_deps = ["%s_CLONE_%i" % (dep,j) for j in range(1,dep_nc+1)]
+                        for i in range(1, item_nc+1):
+                            self.pipeline.add_dependencies("%s_CLONE_%i" % (item,i), clone_deps, reset=True)
+    
     def save_params(self, default_config, custom_config={}, with_luigi=True, local_scheduler=False):
         self.pipeline.default_config = default_config
+        # add clones with dependencies
         for obj_name, obj_clones in custom_config.items():
             if not isinstance(obj_clones, list):
                 raise ValueError("For each object specify the list of clones with configuration!")
             else:
                 for clone_conf in obj_clones:
                     self.pipeline.add_clone(obj_name, clone_conf)
+        self._resolve_clone_dependencies()
         # delete original resources
         to_be_removed = []
         for name, obj in self.pipeline.parts.items():

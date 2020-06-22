@@ -18,9 +18,41 @@ def test_create_pipeline():
     pipe.add(mod)
     pipe.add(nb)
     pipe.add(pys)
+    pipe.add_dependencies("PySample",["Sleep"])
     pipe.save()
     print(pipe.config)
     assert len(pipe.parts) == 3
+
+### Demo 0 ###
+# Only selected resources (clones) are executed as dependencies
+    
+def test_demo_0_init():
+    cg = ConfigGenerator("Trial.json", experiment_name="demo_0", experiment_dir="experiments/demo_0/")
+    DEFAULTS = {}
+    DEFAULTS["p1"] = 0.5
+    DEFAULTS["p3"] = "default"
+    DEFAULTS["sleep"] = 0
+    PARAMETERS = {}
+    for item in cg.pythonitem_names:
+        PARAMETERS[item] = []
+    PARAMETERS["PySample"].append({"p1":1.0,"p2":0.5})
+    cg.save_params(DEFAULTS, PARAMETERS, local_scheduler=True)
+    cg.pipeline.save()
+    assert len(cg.pipeline.parts) == 2
+    assert cg.pipeline.num_clones["PySample"] == 1
+    
+def test_demo_0_run():
+    fp = "experiments/demo_0/demo_0.log"
+    p = subprocess.Popen("bash demo_0.sh 1", cwd="experiments/demo_0/", stdout=open(fp, "w"), shell=True)
+    p_status = p.wait()
+    with open(fp) as f:
+        output = f.read()
+    rmtree("experiments/demo_0/")
+    assert "PySample_CLONE_1 task was executed!" in output
+    assert "Sleep_CLONE_1 task was executed!" not in output
+    
+### Demo 1 ###
+# Testing custom parameter usage + dependency handling
     
 def test_demo_1_init():
     cg = ConfigGenerator("Trial.json", experiment_name="demo_1", experiment_dir="experiments/demo_1/")
@@ -33,6 +65,7 @@ def test_demo_1_init():
         PARAMETERS[item] = []
     PARAMETERS["PySample"].append({"p1":1.0,"p2":0.5})
     PARAMETERS["PySample"].append({"p1":0.0,"p2":1.0})
+    # dependency is properly selected this time
     PARAMETERS["Sleep"].append({})
     cg.save_params(DEFAULTS, PARAMETERS, local_scheduler=True)
     cg.pipeline.save()
@@ -56,7 +89,6 @@ def test_demo_1_run():
     p_status = p.wait()
     with open(fp) as f:
         output = f.read()
-    print(output)
     assert "PySample_CLONE_1 task was executed!" in output
     assert "PySample_CLONE_2 task was executed!" in output
     assert "Sleep_CLONE_1 task was executed!" in output
@@ -69,6 +101,9 @@ def test_demo_1_output():
     assert out_1 == "1.0 0.5 default"
     assert out_2 == "0.0 1.0 default"
 
+### Demo 2 ###
+# Testing default parameter usage
+    
 def test_demo_2_init():
     cg = ConfigGenerator("Trial.json", experiment_name="demo_2", experiment_dir="experiments/demo_2/")
     DEFAULTS = {}
@@ -107,6 +142,7 @@ def test_demo_2_run():
     p_status = p.wait()
     with open(fp) as f:
         output = f.read()
+    assert "Sleep_CLONE_1 task was executed!" not in output
     assert "PySample_CLONE_1 task was executed!" in output
     assert "PySample_CLONE_2 task was executed!" in output
     assert "PySample_CLONE_3 task was executed!" in output
