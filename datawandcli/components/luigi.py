@@ -38,8 +38,8 @@ class BaseTask(luigi.Task):
         self.keep_pid_while_running(process)
         fp.close()
         if process.returncode != 0:
-            with open(self.log_path):
-                print(fp.readlines())
+            with open(self.log_path) as fp:
+                print(fp.read())
             raise RuntimeError("Error during execution!")
         with open(self.output().fn, "w") as fout:
             fout.write('OK')
