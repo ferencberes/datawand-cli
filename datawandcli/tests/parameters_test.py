@@ -10,6 +10,11 @@ def load_last_line(fp):
             last_line = line.rstrip()
     return last_line
 
+def check_process(p, fp):
+    if p.returncode != 0:
+        with open(fp):
+            print(fp.readlines())
+
 def test_create_pipeline():
     pipe = Pipeline("Trial")
     mod = ModuleObject("my_module","","examples/my_module.py")
@@ -45,6 +50,8 @@ def test_demo_0_run():
     fp = "experiments/demo_0/demo_0.log"
     p = subprocess.Popen("bash demo_0.sh 1", cwd="experiments/demo_0/", stdout=open(fp, "w"), shell=True)
     p_status = p.wait()
+    check_process(p, fp)
+    assert p.returncode == 0
     with open(fp) as f:
         output = f.read()
     rmtree("experiments/demo_0/")
@@ -87,6 +94,8 @@ def test_demo_1_run():
     fp = "experiments/demo_1/demo_1.log"
     p = subprocess.Popen("bash demo_1.sh 1", cwd="experiments/demo_1/", stdout=open(fp, "w"), shell=True)
     p_status = p.wait()
+    check_process(p, fp)
+    assert p.returncode == 0
     with open(fp) as f:
         output = f.read()
     assert "PySample_CLONE_1 task was executed!" in output
@@ -140,6 +149,9 @@ def test_demo_2_run():
     fp = "experiments/demo_2/demo_2.log"
     p = subprocess.Popen("bash demo_2.sh 1", cwd="experiments/demo_2/", stdout=open(fp, "w"), shell=True)
     p_status = p.wait()
+    assert p.returncode == 0
+    check_process(p, fp)
+    assert p.returncode == 0
     with open(fp) as f:
         output = f.read()
     assert "Sleep_CLONE_1 task was executed!" not in output
