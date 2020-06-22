@@ -11,6 +11,7 @@ setup(name='datawandcli',
           'argparse',
           'jinja2',
           'luigi',
+          'nbconvert',
           'pytest',
           'pandas',
           'psutil'
