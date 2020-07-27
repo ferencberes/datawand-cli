@@ -14,7 +14,7 @@ setup(name='datawandcli',
           'nbconvert',
           'pytest',
           'pandas',
-          'psutil'
+          'psutil',
       ],
       entry_points={
           'console_scripts': ['datawand = datawandcli.cli.main:execute']
