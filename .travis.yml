@@ -9,12 +9,12 @@ install:
   - cd docs
   - pip install -r requirements.txt
   - cd ..
-  - pip install codecov
 # command to run tests
 script:
-  - pytest
+  - pytest --cov=./
   - bash -e datawandcli/tests/cli_test.sh
   - cd docs
   - make html
 after_success:
   - codecov
+  - bash <(curl -s https://codecov.io/bash)
