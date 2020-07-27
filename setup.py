@@ -11,10 +11,10 @@ setup(name='datawandcli',
           'argparse',
           'jinja2',
           'luigi',
-          'nbconvert',
           'pytest',
           'pandas',
           'psutil',
+          'jupyter',
       ],
       entry_points={
           'console_scripts': ['datawand = datawandcli.cli.main:execute']
