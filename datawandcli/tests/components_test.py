@@ -16,10 +16,10 @@ def test_create_obj():
     assert create_object(script_path_2, pipe_name, "pyscript")
 
 def test_add_obj():
-    mod = ModuleObject("module","trial",module_path)
-    nb = NotebookObject("notebook","trial",nb_path)
-    py1 = PyScriptObject("script1","trial",script_path_1)
-    py2 = PyScriptObject("script2","trial",script_path_2)
+    mod = ModuleObject(module_path)
+    nb = NotebookObject(nb_path)
+    py1 = PyScriptObject(script_path_1)
+    py2 = PyScriptObject(script_path_2)
     pipe = Pipeline(pipe_name)
     pipe.description = "bla bla bla"
     for obj in [mod, nb, py1, py2]:

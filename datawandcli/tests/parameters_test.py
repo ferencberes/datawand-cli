@@ -17,9 +17,9 @@ def check_process(p, fp):
 
 def test_create_pipeline():
     pipe = Pipeline("Trial")
-    mod = ModuleObject("my_module","","examples/my_module.py")
-    nb = NotebookObject("Sleep", "", "examples/Sleep.ipynb")
-    pys = PyScriptObject("PySample","","examples/sample.py")
+    mod = ModuleObject("examples/my_module.py", name="my_module")
+    nb = NotebookObject("examples/Sleep.ipynb", name="Sleep")
+    pys = PyScriptObject("examples/sample.py", name="PySample")
     pipe.add(mod)
     pipe.add(nb)
     pipe.add(pys)

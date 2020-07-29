@@ -4,22 +4,32 @@ from jinja2 import Template
 from .templates import NOTEBOOK_SAMPLE, PY_SAMPLE
 
 def create_object(path, pipeline_name, obj_type, delim=os.path.sep):
+    r"""
+    Create new object for the given pipeline if the given path does not exists.
+    
+    Args:
+        path: Provide path for new pipeline object
+        pipeline_name: Provide pipeline name
+        obj_time: Choose from values ['pyscript','notebook','module']
+    """
     success = False
-    if obj_type == "module":
-        content = ""
-    else:
-        if obj_type=="pyscript":
-            template = Template(PY_SAMPLE)
-        elif obj_type == "notebook":
-            template = Template(NOTEBOOK_SAMPLE)
+    if not os.path.exists(path):
+        obj_type_lower = obj_type.lower()
+        if obj_type_lower == "module":
+            content = ""
         else:
-            raise ValueError("Choose object_type from values ['pyscript','notebook','module']!")
-        depth = len(path.split(delim))-1
-        parent_dir = ".." + os.path.sep
-        content = template.render(rel_path=parent_dir*depth, pipeline_name=pipeline_name)
-    with open(path, 'w') as f:
-        f.write(content)
-    success = True
+            if obj_type_lower=="pyscript":
+                template = Template(PY_SAMPLE)
+            elif obj_type_lower == "notebook":
+                template = Template(NOTEBOOK_SAMPLE)
+            else:
+                raise ValueError("Choose object_type from values ['pyscript','notebook','module']!")
+            depth = len(path.split(delim))-1
+            parent_dir = ".." + os.path.sep
+            content = template.render(rel_path=parent_dir*depth, pipeline_name=pipeline_name)
+        with open(path, 'w') as f:
+            f.write(content)
+        success = True
     return success
         
 def remove_from_pipeline(objects, obj_name):
@@ -31,12 +41,12 @@ def remove_from_pipeline(objects, obj_name):
     return tmp, objects[i].path
 
 class Base():
-    def __init__(self, name, type, path, is_clone=False, extensions=[]):
+    def __init__(self, path, name="", type="", is_clone=False, extensions=[]):
         self._extensions = extensions
         self.is_clone = is_clone
-        self.name = name
-        self.type = type
         self.path = path
+        self.name = self._extract_name(path) if (name == "" or name == None) else name
+        self.type = type
         
     @property
     def name(self):
@@ -69,6 +79,9 @@ class Base():
         #    print("FileNotFound:", value)
 	#    raise FileNotFoundError(value)
         self._path = value
+        
+    def _extract_name(self, file_name, delim=os.path.sep):
+        return ".".join(file_name.split(delim)[-1].split(".")[:-1])
     
     def get(self, deps=[]):
         conf = {"name":self.name, "type":self.type, "path":self.path}
@@ -85,8 +98,8 @@ class Base():
         self.path = config["path"]
     
 class Configurable(Base):
-    def __init__(self, name="", type="", path="", is_clone=False, config={}, extensions=[]):
-        super(Configurable, self).__init__(name, type, path, is_clone, extensions)
+    def __init__(self, path, name="", type="", is_clone=False, config={}, extensions=[]):
+        super(Configurable, self).__init__(path, name, type, is_clone, extensions)
         self.config = config
         
     @property
@@ -109,22 +122,22 @@ class Configurable(Base):
         self.config = config.get("config",{})
         
 class ModuleObject(Configurable):
-    def __init__(self, name, type, path, is_clone=False, config={}, extensions=["py"]):
-        super(ModuleObject, self).__init__(name, type, path, is_clone, config, extensions)
+    def __init__(self, path, name="", type="", is_clone=False, config={}, extensions=["py"]):
+        super(ModuleObject, self).__init__(path, name, type, is_clone, config, extensions)
         
 class NotebookObject(Configurable):
-    def __init__(self, name, type, path, is_clone=False, config={}, extensions=["ipynb"]):
-        super(NotebookObject, self).__init__(name, type, path, is_clone, config, extensions)
+    def __init__(self, path, name="", type="", is_clone=False, config={}, extensions=["ipynb"]):
+        super(NotebookObject, self).__init__(path, name, type, is_clone, config, extensions)
         
     def copy(self):
-        return NotebookObject(self.name, self.type, self.path, self.is_clone, self.config)
+        return NotebookObject(self.path, self.name, self.type, self.is_clone, self.config)
         
 class PyScriptObject(Configurable):
-    def __init__(self, name, type, path, is_clone=False, config={}, extensions=["py"]):
-        super(PyScriptObject, self).__init__(name, type, path, is_clone, config, extensions)
+    def __init__(self, path, name="", type="", is_clone=False, config={}, extensions=["py"]):
+        super(PyScriptObject, self).__init__(path, name, type, is_clone, config, extensions)
         
     def copy(self):
-        return PyScriptObject(self.name, self.type, self.path, self.is_clone, self.config)
+        return PyScriptObject(self.path, self.name, self.type, self.is_clone, self.config)
         
 class Pipeline():
     def __init__(self, name="", description="", base_dir="", experiment_name="", verbose=False):
@@ -249,15 +262,15 @@ class Pipeline():
             self.num_clones = {}
             # parse modules
             for item in config["imports"]:
-                mod = ModuleObject(item["name"], item["type"], item["path"])
+                mod = ModuleObject(item["path"], item["name"], item["type"])
                 self.add(mod)
             # parse notebooks
             for item in config["notebooks"]:
-                nb = NotebookObject(item["name"], item["type"], item["path"], item["is_clone"]=="yes", item.get("config",dict()))
+                nb = NotebookObject(item["path"], item["name"], item["type"], item["is_clone"]=="yes", item.get("config",dict()))
                 self.add(nb)
             # parse scripts
             for item in config["py_scripts"]:
-                ps = PyScriptObject(item["name"], item["type"], item["path"], item["is_clone"]=="yes", item.get("config",dict()))
+                ps = PyScriptObject(item["path"], item["name"], item["type"], item["is_clone"]=="yes", item.get("config",dict()))
                 self.add(ps)
             # parse dependencies
             for item in config["notebooks"] + config["py_scripts"]:

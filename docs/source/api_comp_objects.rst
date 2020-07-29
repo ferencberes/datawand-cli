@@ -1,35 +1,25 @@
-datawandcli.components.objects module
-======================================
+Objects module
+==============
 
-Abstract objects
-----------------
+datawand-cli handles experiment execution through pipelines which is the collection of multiple Python scripts or Jupyter notebooks. The Pipeline class has a simple interface to provide parameters and dependencies between pipeline components.
 
-.. autoclass:: datawandcli.components.objects.Base
-    :members:
-    :undoc-members:
 
-.. autoclass:: datawandcli.components.objects.Configurable
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Pipeline objects
-----------------
+Pipeline components
+-------------------
 
 .. autoclass:: datawandcli.components.objects.ModuleObject
     :members:
     :undoc-members:
-    :show-inheritance:
 
 .. autoclass:: datawandcli.components.objects.NotebookObject
     :members:
     :undoc-members:
-    :show-inheritance:
 
 .. autoclass:: datawandcli.components.objects.PyScriptObject
     :members:
     :undoc-members:
-    :show-inheritance:
+
+.. autofunction:: datawandcli.components.objects.create_object
 
 Pipeline class
 --------------
@@ -37,5 +27,4 @@ Pipeline class
 .. autoclass:: datawandcli.components.objects.Pipeline
     :members:
     :undoc-members:
-    :show-inheritance:
 
