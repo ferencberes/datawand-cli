@@ -12,13 +12,13 @@ Pipeline components
 .. autoclass:: datawandcli.components.objects.Configurable
     :show-inheritance:
 
-.. autoclass:: datawandcli.components.objects.ModuleObject
+.. autoclass:: datawandcli.components.objects.Module
     :show-inheritance:
 
-.. autoclass:: datawandcli.components.objects.NotebookObject
+.. autoclass:: datawandcli.components.objects.Notebook
     :show-inheritance:    
 
-.. autoclass:: datawandcli.components.objects.PyScriptObject
+.. autoclass:: datawandcli.components.objects.PyScript
     :show-inheritance:
 
 .. autofunction:: datawandcli.components.objects.create_object

@@ -1,9 +1,17 @@
 import os
 from datawandcli.cli.utils import get_luigi_conf
-from datawandcli.components.objects import Pipeline, Configurable, ModuleObject, PyScriptObject, NotebookObject
+from datawandcli.components.objects import Pipeline, Configurable, Module, PyScript, Notebook
 from datawandcli.components.luigi import *
 
 class ParamHelper():
+    r"""
+    With ParamHelper you can access the parameters assigned to a given pipeline component.
+    
+    Args:
+        base_dir: Provide relative path to the project root folder
+        pipeline_name: Provide the name of your pipeline
+        args: sys.argv
+    """
     def __init__(self, base_dir, pipeline_name, args):
         self._base_dir = base_dir
         self._pipeline_name = pipeline_name
@@ -54,6 +62,12 @@ class ParamHelper():
         self._custom_config = conf
     
     def get(self, param_id):
+        r"""
+        Use this function to query object parameters
+        
+        Args:
+            param_id: Provide string identifier (dictionary key value) for the parameter to query 
+        """
         if param_id in self.custom_config:
             return self.custom_config[param_id]
         elif param_id in self.default_config:
@@ -65,6 +79,15 @@ class ParamHelper():
         
         
 class ConfigGenerator():
+    r"""
+    With ConfigGenerator you can assign parameters to pipeline components.
+    
+    Args:
+        pipeline_path: Provide relative path to pipeline JSON configuration file
+        clear: Clear pipeline before setting parameters
+        experiment_dir: Provide path relative to the project root folder
+        experiment_name: Provide experiment name
+    """
     def __init__(self, pipeline_path, clear=True, experiment_dir=None, experiment_name=None):
         self.experiment_dir = experiment_dir
         self.experiment_name = experiment_name
@@ -101,6 +124,15 @@ class ConfigGenerator():
                             self.pipeline.add_dependencies("%s_CLONE_%i" % (item,i), clone_deps)
     
     def save_params(self, default_config, custom_config={}, with_luigi=True, local_scheduler=False):
+        r"""
+        Save parameter configuration for you pipeline.
+        
+        Args:
+            default_config (dict): Provide parameters shared among all pipeline components
+            custom_config (dict of lists): Provide custom parameters for selected components
+            with_luigi: Generate executable files for the Luigi Scheduler framework
+            local_scheduler: Use local scheduling for Luigi
+        """
         self.pipeline.default_config = default_config
         # add clones with dependencies
         for obj_name, obj_clones in custom_config.items():
@@ -113,7 +145,7 @@ class ConfigGenerator():
         # delete original resources
         to_be_removed = []
         for name, obj in self.pipeline.parts.items():
-            if not obj.is_clone and not isinstance(obj, ModuleObject):
+            if not obj.is_clone and not isinstance(obj, Module):
                 to_be_removed.append(name)
         for name in to_be_removed:
             self.pipeline.remove(name)
@@ -121,12 +153,12 @@ class ConfigGenerator():
         output_path = self.pipeline.save()
         # generate luigi plan
         if with_luigi:
-            self.generate_luigi_plan(local_scheduler)
+            self._generate_luigi_plan(local_scheduler)
         print("### New experiment was created ###")
         print("Name:", self.pipeline.experiment_name)
         print("Path:", output_path)
         
-    def generate_luigi_plan(self, local_scheduler=False):
+    def _generate_luigi_plan(self, local_scheduler=False):
         clones = []
         for task_name, obj in self.pipeline.parts.items():
             if obj.is_clone:
@@ -145,9 +177,9 @@ import luigi
                 deps = dependency_extractor(self.pipeline.dependencies[obj.name])
             else:
                 deps = ""
-            if isinstance(obj, PyScriptObject):
+            if isinstance(obj, PyScript):
                 plan += PYSCRIPT_TEMPLATE.render(name=obj.name, path=obj.path, config=obj.config, name_space=experiment_name, deps=deps)
-            elif isinstance(obj, NotebookObject):
+            elif isinstance(obj, Notebook):
                 plan += NOTEBOOK_TEMPLATE.render(name=obj.name, path=obj.path, config=obj.config, name_space=experiment_name, deps=deps)
             else:
                 raise RuntimeError("Unsupported task object was detected %s!" % obj.name)

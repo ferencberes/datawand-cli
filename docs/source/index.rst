@@ -15,7 +15,7 @@ Welcome to datawand-cli's documentation!
    :caption: API documentation:
    
    api_comp_objects
-   api_comp_luigi
+   api_comp_params
 
 Indices and tables
 ==================

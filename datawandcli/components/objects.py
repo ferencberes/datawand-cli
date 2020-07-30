@@ -109,12 +109,12 @@ class Base():
         self.type = config["type"]
         self.path = config["path"]
     
-class ModuleObject(Base):
+class Module(Base):
     r"""
-    ModuleObject represents any unconfigurable pipeline components (e.g. Python module, data or API key files).
+    Module represents any unconfigurable pipeline components (e.g. Python module, data or API key files).
     """
     def __init__(self, path, name="", type="module"):
-        super(ModuleObject, self).__init__(path, name, type)
+        super(Module, self).__init__(path, name, type)
     
 class Configurable(Base):
     r"""
@@ -148,25 +148,25 @@ class Configurable(Base):
         
 
         
-class NotebookObject(Configurable):
+class Notebook(Configurable):
     r"""
-    NotebookObject represents Jupyter notebooks in a pipeline.
+    Notebook represents Jupyter notebooks in a pipeline.
     """
     def __init__(self, path, name="", type="notebook", is_clone=False, config={}, extensions=["ipynb"]):
-        super(NotebookObject, self).__init__(path, name, type, is_clone, config, extensions)
+        super(Notebook, self).__init__(path, name, type, is_clone, config, extensions)
         
     def copy(self):
-        return NotebookObject(self.path, self.name, self.type, self.is_clone, self.config)
+        return Notebook(self.path, self.name, self.type, self.is_clone, self.config)
         
-class PyScriptObject(Configurable):
+class PyScript(Configurable):
     r"""
-    PyScriptObject represents executable Python scripts in a pipeline.
+    PyScript represents executable Python scripts in a pipeline.
     """
     def __init__(self, path, name="", type="pyscript", is_clone=False, config={}, extensions=["py"]):
-        super(PyScriptObject, self).__init__(path, name, type, is_clone, config, extensions)
+        super(PyScript, self).__init__(path, name, type, is_clone, config, extensions)
         
     def copy(self):
-        return PyScriptObject(self.path, self.name, self.type, self.is_clone, self.config)
+        return PyScript(self.path, self.name, self.type, self.is_clone, self.config)
         
 class Pipeline():
     r"""
@@ -233,15 +233,15 @@ class Pipeline():
         
     @property
     def modules(self):
-        return [obj for obj in self.parts.values() if isinstance(obj, ModuleObject)]
+        return [obj for obj in self.parts.values() if isinstance(obj, Module)]
     
     @property
     def notebooks(self):
-        return [obj for obj in self.parts.values() if isinstance(obj, NotebookObject)]
+        return [obj for obj in self.parts.values() if isinstance(obj, Notebook)]
     
     @property
     def pyscripts(self):
-        return [obj for obj in self.parts.values() if isinstance(obj, PyScriptObject)]
+        return [obj for obj in self.parts.values() if isinstance(obj, PyScript)]
     
     @property
     def config(self):
@@ -311,15 +311,15 @@ class Pipeline():
             self.num_clones = {}
             # parse modules
             for item in config["imports"]:
-                mod = ModuleObject(item["path"], item["name"], item["type"])
+                mod = Module(item["path"], item["name"], item["type"])
                 self.add(mod)
             # parse notebooks
             for item in config["notebooks"]:
-                nb = NotebookObject(item["path"], item["name"], item["type"], item["is_clone"]=="yes", item.get("config",dict()))
+                nb = Notebook(item["path"], item["name"], item["type"], item["is_clone"]=="yes", item.get("config",dict()))
                 self.add(nb)
             # parse scripts
             for item in config["py_scripts"]:
-                ps = PyScriptObject(item["path"], item["name"], item["type"], item["is_clone"]=="yes", item.get("config",dict()))
+                ps = PyScript(item["path"], item["name"], item["type"], item["is_clone"]=="yes", item.get("config",dict()))
                 self.add(ps)
             # parse dependencies
             for item in config["notebooks"] + config["py_scripts"]:
@@ -338,7 +338,7 @@ class Pipeline():
     
     def add(self, obj, silent=False):
         r"""
-        Add new object to the pipeline (e.g. ModuleObject, NotebookObject, PyScriptObject). The new objects'a name parameter must be unique!
+        Add new object to the pipeline (e.g. Module, Notebook, PyScript). The new objects'a name parameter must be unique!
         """
         obj_name = obj.name
         obj_path = obj.path
@@ -361,7 +361,7 @@ class Pipeline():
             obj = self.parts[obj_name]
             fp = obj.path
             del self.parts[obj_name]
-            to_be_deleted = isinstance(obj, ModuleObject) or not obj.is_clone
+            to_be_deleted = isinstance(obj, Module) or not obj.is_clone
             if to_be_deleted:
                 self.file_paths.remove(fp)
             # remove all dependencies of this item
@@ -392,7 +392,7 @@ class Pipeline():
             if name not in self.parts:
                 raise ValueError("'%s' name was not found in the pipeline!" % name)
             elif self.parts[name] == "module":
-                raise ValueError("Cannot set dependencies for ModuleObjects (name=%s)!" % name)
+                raise ValueError("Cannot set dependencies for Module (name=%s)!" % name)
         if obj_name in self.dependencies and not reset:
             self.dependencies[obj_name] = list(set(self.dependencies[obj_name]).union(set(dep_names)))
         else:
