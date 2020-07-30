@@ -30,6 +30,9 @@ def create_object(path, pipeline_name, obj_type, delim=os.path.sep):
         with open(path, 'w') as f:
             f.write(content)
         success = True
+    else:
+        # if file exists then it would not be overwritten
+        success = True
     return success
         
 def remove_from_pipeline(objects, obj_name):
@@ -41,6 +44,14 @@ def remove_from_pipeline(objects, obj_name):
     return tmp, objects[i].path
 
 class Base():
+    r"""
+    Base is the abstract representation of all pipeline components. It is non configurable and only contains basic information on each object.
+    
+    Args:
+        path: Provide path relative to the project root folder 
+        name (optional): Provide a reference name for this object. It must be unique among pipeline components!
+        type (optional): Provide a note on the type or purpose of this object (e.g. visualization, preprocessor, data etc.)
+    """
     def __init__(self, path, name="", type="", is_clone=False, extensions=[]):
         self._extensions = extensions
         self.is_clone = is_clone
@@ -72,12 +83,13 @@ class Base():
         
     @path.setter
     def path(self, value):
-        ext = value.split(".")[-1]
-        if ext not in self._extensions:
-            raise ValueError("Invalid file extension '%s'! It must be '.%s'." % (str(ext), str(self._extensions)))
+        if len(self._extensions) > 0:
+            ext = value.split(".")[-1]
+            if ext not in self._extensions:
+                raise ValueError("Invalid file extension '%s'! It must be '.%s'." % (str(ext), str(self._extensions)))
         #if not os.path.exists(value) and not self.is_clone:
         #    print("FileNotFound:", value)
-	#    raise FileNotFoundError(value)
+        #    raise FileNotFoundError(value)
         self._path = value
         
     def _extract_name(self, file_name, delim=os.path.sep):
@@ -97,7 +109,20 @@ class Base():
         self.type = config["type"]
         self.path = config["path"]
     
+class ModuleObject(Base):
+    r"""
+    ModuleObject represents any unconfigurable pipeline components (e.g. Python module, data or API key files).
+    """
+    def __init__(self, path, name="", type="module"):
+        super(ModuleObject, self).__init__(path, name, type)
+    
 class Configurable(Base):
+    r"""
+    Configurable is a pipeline component with custom parameters. Its main purpose is to enable pipeline object execution with different parameters in parallel.
+    
+    Args:
+        config (optinal): Provide parameters to the given pipeline object through a dictionary.
+    """
     def __init__(self, path, name="", type="", is_clone=False, config={}, extensions=[]):
         super(Configurable, self).__init__(path, name, type, is_clone, extensions)
         self.config = config
@@ -121,25 +146,38 @@ class Configurable(Base):
         super(Configurable, self).load(config)
         self.config = config.get("config",{})
         
-class ModuleObject(Configurable):
-    def __init__(self, path, name="", type="", is_clone=False, config={}, extensions=["py"]):
-        super(ModuleObject, self).__init__(path, name, type, is_clone, config, extensions)
+
         
 class NotebookObject(Configurable):
-    def __init__(self, path, name="", type="", is_clone=False, config={}, extensions=["ipynb"]):
+    r"""
+    NotebookObject represents Jupyter notebooks in a pipeline.
+    """
+    def __init__(self, path, name="", type="notebook", is_clone=False, config={}, extensions=["ipynb"]):
         super(NotebookObject, self).__init__(path, name, type, is_clone, config, extensions)
         
     def copy(self):
         return NotebookObject(self.path, self.name, self.type, self.is_clone, self.config)
         
 class PyScriptObject(Configurable):
-    def __init__(self, path, name="", type="", is_clone=False, config={}, extensions=["py"]):
+    r"""
+    PyScriptObject represents executable Python scripts in a pipeline.
+    """
+    def __init__(self, path, name="", type="pyscript", is_clone=False, config={}, extensions=["py"]):
         super(PyScriptObject, self).__init__(path, name, type, is_clone, config, extensions)
         
     def copy(self):
         return PyScriptObject(self.path, self.name, self.type, self.is_clone, self.config)
         
 class Pipeline():
+    r"""
+    This object is the representation of a pure Python data science pipeline. It stores components along with their parameters and dependency relations. Clones of the same object can be created with different parametrization in order to execute them in parallel during experiments.
+    
+    Args:
+        name: Provide a name for your pipeline
+        description: Provide a short description for your pipeline
+        base_dir: Provide path relative to the project root folder. Needed only for scheduling!
+        experiment_name: Provide an experiment name. Needed only for scheduling!
+    """
     def __init__(self, name="", description="", base_dir="", experiment_name="", verbose=False):
         self.verbose = verbose
         self.name = name
@@ -235,6 +273,9 @@ class Pipeline():
                 self._duplicate_file(init_path, init_path)
     
     def save(self, output_folder=None):
+        r"""
+        Save pipeline object to JSON file.
+        """
         if output_folder == None:
             output_folder = self.base_dir
         if output_folder == "":
@@ -249,10 +290,18 @@ class Pipeline():
             print("Pipeline was SAVED")
         return output_path
     
-    def load(self, config_path, experiment_name=None, experiment_dir=None):
-        ext = config_path.split(".")[-1]
-        if ext == "json":
-            with open(config_path) as f:
+    def load(self, path, experiment_name=None, experiment_dir=None):
+        r"""
+        Load pipeline object from JSON file.
+        
+        Args:
+            path: JSON file path
+            experiment_name: Provide experiment name. Needed only for scheduling!
+            experiment_dir: Provide path relative to the project root folder. Needed only for scheduling!
+        """
+        ext = path.split(".")[-1]
+        if ext.lower() == "json":
+            with open(path) as f:
                 config = json.load(f)
             self.name = config["name"]
             self.experiment_name = config.get("experiment_name","") if experiment_name == None else experiment_name
@@ -288,16 +337,26 @@ class Pipeline():
             raise ValueError("Invalid path! You must specify a JSON file.")
     
     def add(self, obj, silent=False):
+        r"""
+        Add new object to the pipeline (e.g. ModuleObject, NotebookObject, PyScriptObject). The new objects'a name parameter must be unique!
+        """
         obj_name = obj.name
         obj_path = obj.path
         if obj_name in self.parts:
             if not silent:
-                print("An object with 'name=%s' is already present in the pipeline. The names of the components must be unique!" % obj_name)
+                print("An object with 'name=%s' is already present in the pipeline. Object names must be unique!" % obj_name)
         else:
             self.parts[obj_name] = obj
             self.file_paths.append(obj_path)
     
     def remove(self, obj_name, with_source=False, silent=False):
+        r"""
+        Remove object from the pipeline.
+        
+        Args:
+           obj_name: Provide the name of the object to be deleted
+           with_source: Decide whether the source file of the object should be deleted as well
+        """
         if obj_name in self.parts:
             obj = self.parts[obj_name]
             fp = obj.path
@@ -321,6 +380,14 @@ class Pipeline():
                 print("There was no object with 'name=%s' found in the pipeline" % obj_name)
             
     def add_dependencies(self, obj_name, dep_names=[], reset=False):
+        r"""
+        Add new dependencies between pipeline objects
+        
+        Args:
+            obj_name: Select an object by name
+            dep_names: Provide the list of object names that the selected item depends on.
+            reset: Decide whether to reset former dependencies
+        """
         for name in [obj_name]+dep_names:
             if name not in self.parts:
                 raise ValueError("'%s' name was not found in the pipeline!" % name)
@@ -332,15 +399,32 @@ class Pipeline():
             self.dependencies[obj_name] = dep_names
             
     def remove_dependencies(self, obj_name, dep_names=[]):
-         if obj_name in self.dependencies:
+        r"""
+        Delete existing dependencies between pipeline objects
+        
+        Args:
+            obj_name: Select an object by name
+            dep_names: Provide the list of object names that the selected item no longer depends on. Note that all dependencies are deleted if the list is empty.
+        """
+        if obj_name in self.dependencies:
+            if len(dep_names) > 0:            
                 for dep_name in dep_names:
                     if dep_name in self.dependencies[obj_name]:
                         self.dependencies[obj_name].remove(dep_name)
                         if len(self.dependencies[obj_name]) == 0:
                             del self.dependencies[obj_name]
                             break
+            else:
+                del self.dependencies[obj_name]
                             
     def add_clone(self, obj_name, custom_config={}):
+        r"""
+        Add new clone item to the pipeline.
+        
+        Args:
+            obj_name: select object to be cloned by name
+            custom_config: provide custom configuration for the new clone
+        """
         if not isinstance(custom_config, dict):
             raise ValueError("Configuration must be specified in a dictionary!")
         if obj_name in self.parts:
@@ -362,6 +446,9 @@ class Pipeline():
             raise ValueError("Invalid object name!")
     
     def clear(self):
+        r"""
+        Remove all clones from the pipeline.
+        """
         # remove clones
         items = list(self.num_clones.items())
         for obj_name, cnt in items:

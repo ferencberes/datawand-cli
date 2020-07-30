@@ -7,17 +7,19 @@ datawand-cli handles experiment execution through pipelines which is the collect
 Pipeline components
 -------------------
 
+.. autoclass:: datawandcli.components.objects.Base
+
+.. autoclass:: datawandcli.components.objects.Configurable
+    :show-inheritance:
+
 .. autoclass:: datawandcli.components.objects.ModuleObject
-    :members:
-    :undoc-members:
+    :show-inheritance:
 
 .. autoclass:: datawandcli.components.objects.NotebookObject
-    :members:
-    :undoc-members:
+    :show-inheritance:    
 
 .. autoclass:: datawandcli.components.objects.PyScriptObject
-    :members:
-    :undoc-members:
+    :show-inheritance:
 
 .. autofunction:: datawandcli.components.objects.create_object
 
@@ -25,6 +27,6 @@ Pipeline class
 --------------
 
 .. autoclass:: datawandcli.components.objects.Pipeline
-    :members:
+    :members: save, load, add, remove, add_dependencies, remove_dependencies, add_clone, clear
     :undoc-members:
 
