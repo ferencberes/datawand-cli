@@ -8,11 +8,22 @@ Welcome to datawand-cli's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Getting started:
+
+.. toctree::
+   :maxdepth: 2
+   :caption: CLI Documentation:
+
+   quick_start
+   cli_docs
 
 .. toctree::
    :maxdepth: 1
-   :caption: API documentation:
+   :caption: API Documentation:
+ 
+.. toctree::
+   :maxdepth: 1
+   :caption: API Reference:
    
    api_comp_objects
    api_comp_params

@@ -3,7 +3,6 @@ Objects module
 
 datawand-cli handles experiment execution through pipelines which is the collection of multiple Python scripts or Jupyter notebooks. The Pipeline class has a simple interface to provide parameters and dependencies between pipeline components.
 
-
 Pipeline components
 -------------------
 
