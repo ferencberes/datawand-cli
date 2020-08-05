@@ -17,6 +17,8 @@ setup(name='datawandcli',
           'pandas',
           'psutil',
           'jupyter',
+          'networkx',
+          'matplotlib',
       ],
       entry_points={
           'console_scripts': ['datawand = datawandcli.cli.main:execute']
