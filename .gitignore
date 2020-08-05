@@ -3,3 +3,6 @@
 *.json
 *CLONE*
 experiments/
+.coverage
+coverage.xml
+docs/build/

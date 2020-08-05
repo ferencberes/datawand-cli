@@ -6,20 +6,20 @@
 Welcome to datawand-cli's documentation!
 ========================================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Getting started:
+**datawand-cli** is a lightweight Python data science pipeline manager that is built on top of the `Luigi <https://github.com/spotify/luigi>`_ task scheduler package. Our solution provides in addition:
+
+- Python API + bash CLI to interact with pipelines in a comfortable way
+- common parameter loading interface for Jupyter Notebooks and Python scripts **(WIP)**
+- parallel scheduling of Jupyter notebooks and Python scripts in the same environment (governed by `Luigi <https://github.com/spotify/luigi>`_) 
+- experiment reproducibility
 
 .. toctree::
    :maxdepth: 2
    :caption: CLI Documentation:
 
-   quick_start
+   getting_started
+   toy_example
    cli_docs
-
-.. toctree::
-   :maxdepth: 1
-   :caption: API Documentation:
  
 .. toctree::
    :maxdepth: 1
