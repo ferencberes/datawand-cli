@@ -9,6 +9,17 @@ datawand copy pipeline1.json pipeline2
 echo
 datawand status
 echo
+datawand add pipeline2.json examples/sample.py
+datawand add pipeline2.json apple.ipynb --name Apple
+datawand add pipeline2.json pear.txt --type module
+datawand dependency add pipeline2.json Apple pear
+echo
+datawand dependency remove pipeline2.json Apple pear
+datawand remove pipeline2.json sample
+datawand remove pipeline2.json Apple --source
+datawand remove pipeline2.json pear
+rm pear.txt
+echo
 datawand delete pipeline1.json
 echo
 datawand delete pipeline2.json

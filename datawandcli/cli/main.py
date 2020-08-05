@@ -16,12 +16,26 @@ def cli_parser():
     drop.add_argument("name", help=REPO_NAME_MSG)
     create = subparsers.add_parser("create", help="Create a new pipeline")
     create.add_argument("name", help="Provide pipeline name")
-    copy = subparsers.add_parser("copy", help="Copy pipeline")
-    copy.add_argument("path", help=PATH_MSG + " to be copied")
-    copy.add_argument("name", help="Provide name for the new pipeline")
+    add = subparsers.add_parser("add", help="Add new component to pipeline")
+    add.add_argument("pipeline_path", help="Provide pipeline config path")
+    add.add_argument("object_path", help="Provide relative path to the new object in the repository")
+    add.add_argument("--name", help="Provide name for the new component")
+    add.add_argument("--type", help="Provide component type", choices=['pyscript', 'notebook', 'module'])
+    remove = subparsers.add_parser("remove", help="Remove component from pipeline")
+    remove.add_argument("pipeline_path", help="Provide pipeline config path")
+    remove.add_argument("object_name", help="Provide name for the component to be deleted")
+    remove.add_argument("--source", action="store_true", help="Delete the related source file as well")
+    dependency = subparsers.add_parser("dependency", help="Add new dependency relation")
+    dependency.add_argument("action", help="Choose dependency action", choices=['add', 'remove'])
+    dependency.add_argument("pipeline_path", help="Provide pipeline config path")
+    dependency.add_argument("dependant_name", help="Provide dependant object name")
+    dependency.add_argument("dependency_name", help="Provide depdendency object name")
     view = subparsers.add_parser("view", help="View pipeline (items)")
     view.add_argument("path", help=PATH_MSG)
     view.add_argument("--name", help="Select an object name from the pipeline")
+    copy = subparsers.add_parser("copy", help="Copy pipeline")
+    copy.add_argument("path", help=PATH_MSG + " to be copied")
+    copy.add_argument("name", help="Provide name for the new pipeline")
     delete = subparsers.add_parser("delete", help="Remove pipeline")
     delete.add_argument("path", help=PATH_MSG)
     run = subparsers.add_parser("run", help="Run experiment")
@@ -65,6 +79,12 @@ def execute():
             print("A repository was deleted.")
     elif args.command == "create":
         create_pipeline(c, repos_table, args.name)
+    elif args.command == "add":
+        success = add_component(args.pipeline_path, args.object_path, args.name, args.type)
+    elif args.command == "remove":
+        success = remove_component(args.pipeline_path, args.object_name, args.source)
+    elif args.command == "dependency":
+        success = update_dependencies(args.action, args.pipeline_path, args.dependant_name, args.dependency_name)
     elif args.command == "copy":
         success = copy_pipeline(args.path, args.name)
         if success:

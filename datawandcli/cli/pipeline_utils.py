@@ -1,7 +1,7 @@
 import os
 from .utils import *
 from .repository_utils import get_repo, NO_DW_MSG
-from datawandcli.components.objects import Pipeline
+from datawandcli.components.objects import *
 
 def create_pipeline(cursor, repo_table, name, description=""):
     success = False
@@ -72,11 +72,19 @@ def view_pipeline(file_path, object_name):
             if len(obj_type) > 0:
                 print("Type:", obj_type)
             print("Path:", pipe_obj.parts[object_name].path)
+            deps = pipe_obj.dependencies.get(object_name, [])
+            if len(deps) > 0:
+                print("Dependencies:", deps)
+            else:
+                print("No dependencies were set.")
             cfg = pipe_obj.default_config.copy()
             cfg.update(pipe_obj.parts[object_name].config)
             if len(cfg) > 0:
                 print("Parameters:")
                 print(cfg)
+            else:
+                print("No parameters were set.")
+            
         success = True
     return success
 
@@ -89,3 +97,60 @@ def remove_pipeline(file_path):
         print("You must provide a JSON file!")
     return success
 
+def infer_type(path):
+    ext = path.split(".")[-1]
+    if "ipynb" == ext:
+        return "notebook"
+    elif "py" == ext:
+        return "pyscript"
+    else:
+        return "module"
+
+# TODO: possible problem with object path handling
+def add_component(pipeline_path, object_path, object_name=None, object_type=None):
+    success = False
+    is_valid, _ = validate_config_json(pipeline_path)
+    if object_type == None:
+        object_type = infer_type(object_path)
+        print("Infered object type is: %s" % object_type)
+    if is_valid:
+        pipe_obj = Pipeline()
+        pipe_obj.load(pipeline_path)
+        if object_type == "notebook":
+            new_obj = Notebook(object_path, object_name)
+        elif object_type == "pyscript":
+            new_obj = PyScript(object_path, object_name)
+        else:
+            new_obj = Module(object_path, object_name)
+        if not new_obj.name in pipe_obj.parts and not os.path.exists(object_path):
+            create_object(object_path, pipe_obj.name, object_type)
+        pipe_obj.add(new_obj)
+        pipe_obj.save()
+        success = True
+    return success
+
+def remove_component(pipeline_path, object_name, with_source=False):
+    success = False
+    is_valid, _ = validate_config_json(pipeline_path)
+    if is_valid:
+        pipe_obj = Pipeline()
+        pipe_obj.load(pipeline_path)
+        if object_name in pipe_obj.parts:
+            pipe_obj.remove(object_name, with_source)
+            pipe_obj.save()
+        success = True
+    return success
+
+def update_dependencies(action, pipeline_path, dependant_name, dependency_name):
+    success = False
+    is_valid, _ = validate_config_json(pipeline_path)
+    if is_valid:
+        pipe_obj = Pipeline()
+        pipe_obj.load(pipeline_path)
+        if action == "add":
+            pipe_obj.add_dependencies(dependant_name, [dependency_name])
+        else:
+            pipe_obj.remove_dependencies(dependant_name, [dependency_name])
+        pipe_obj.save()
+        success = True
+    return success

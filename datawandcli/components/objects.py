@@ -261,7 +261,7 @@ class Pipeline():
         if self.base_dir != "":
             fp = os.path.join(self.base_dir, fp)
         fp_dir, _ = os.path.split(fp)
-        if not os.path.exists(fp_dir):
+        if len(fp_dir) > 0 and not os.path.exists(fp_dir):
             os.makedirs(fp_dir)
         if old_path != fp:
             copyfile(old_path, fp)
@@ -416,6 +416,8 @@ class Pipeline():
                             break
             else:
                 del self.dependencies[obj_name]
+        else:
+            raise ValueError("No dependency was set for '%s'!" % obj_name)
                             
     def add_clone(self, obj_name, custom_config={}):
         r"""
