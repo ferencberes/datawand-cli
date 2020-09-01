@@ -34,7 +34,7 @@ class BaseTask(luigi.Task):
         resource_dir, resource_name = os.path.split(self.source_path)
         fp = open(self.log_path, "w")
         # NOTE: namespace must be given in order to be able to kill the processes successfully!
-        process = subprocess.Popen(self.execution_command(resource_name, self.task_namespace), cwd=resource_dir, stdout=fp, stderr=fp)
+        process = subprocess.Popen(self.execution_command(resource_name, self.task_namespace), cwd=None if resource_dir == "" else resource_dir, stdout=fp, stderr=fp)
         self.keep_pid_while_running(process)
         fp.close()
         if process.returncode != 0:
