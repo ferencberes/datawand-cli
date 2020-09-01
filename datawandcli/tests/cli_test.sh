@@ -25,7 +25,7 @@ datawand delete pipeline1.json
 echo
 datawand delete pipeline2.json
 echo
-datawand scheduler start --port 8085 --keep 1800 --retry 900
+datawand scheduler start --port 8085 --keep 1800 --retry 900 --clear
 echo
 python trial_parameters.py
 echo
@@ -58,6 +58,8 @@ datawand log experiments/demo_1/Trial.json --name PySample_CLONE_2 --tail 30
 datawand log experiments/demo_1/Trial.json --name PySample_CLONE_3 --all
 echo
 datawand clear experiments/demo_1/Trial.json
+echo
+datawand scheduler restart
 echo
 datawand scheduler stop
 echo
