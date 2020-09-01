@@ -148,6 +148,13 @@ First you must start the luigi scheduler in order to execute your experiment
 
    $ datawand scheduler start
 
+With the following command you can query the luigi scheduler status along with its port
+
+.. code-block:: bash
+
+   $ datawand scheduler status
+
+
 Then provide the path for the experiment configuration file. You can also specify the maximum number of threads to use for parallel execution.
 
 
@@ -193,4 +200,16 @@ Output: (Spearman's Rho correlation of different centrality metrics for the Kara
    pagerank     0.978925  1.000000   0.824780     0.879444
    closeness    0.894507  0.824780   1.000000     0.898087
    betweenness  0.905013  0.879444   0.898087     1.000000
+
+
+Postprocessing
+--------------
+
+Finally, if you have finished running your experiments then you should stop the scheduler
+
+.. code-block:: bash
+
+   $ datawand scheduler stop
+
+
 

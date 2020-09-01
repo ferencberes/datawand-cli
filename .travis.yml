@@ -12,6 +12,7 @@ install:
 script:
   - pytest --cov=./
   - bash -e datawandcli/tests/cli_test.sh
+  - bash -e datawandcli/tests/demo_test.sh
   - cd docs
   - make html
 after_success:
