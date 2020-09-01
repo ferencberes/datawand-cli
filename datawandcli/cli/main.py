@@ -51,10 +51,11 @@ def cli_parser():
     kill = subparsers.add_parser("kill", help="Kill  experiment processes")
     kill.add_argument("path", help=EXP_PATH)
     scheduler = subparsers.add_parser("scheduler", help="Interact with luigi scheduler")
-    scheduler.add_argument("action", choices=['start', 'status', 'stop'], help="Choose scheduler action")
+    scheduler.add_argument("action", choices=['start', 'status', 'restart', 'stop'], help="Choose scheduler action")
     scheduler.add_argument("--port", type=int, default=8082, help="Select the port for luigi central scheduler (default: 8082).")
     scheduler.add_argument("--keep", type=int, default=3600, help="Number of seconds until task history is cleared (default: 60 minutes).")
     scheduler.add_argument("--retry", type=int, default=1800, help="Number of seconds until failed tasks are re-executed (default: 30 minutes). Failed tasks are only re-tried if this value is smaller than the --keep argument.")
+    scheduler.add_argument("--clear",  action="store_true", help="Clear the luigi cache before starting the scheduler")
     return parser
     
 def execute():
@@ -109,11 +110,14 @@ def execute():
         success = log_experiment(c, repos_table, args.path, args.name, args.tail, args.all)
     elif args.command == "scheduler":
         if args.action == "start":
-            start_luigi(args.port, args.keep, args.retry)
+            start_luigi(args.port, args.keep, args.retry, args.clear)
         elif args.action == "status":
-            find_luigi(False)
+            _ = find_luigi(False, verbose=True)
+        elif args.action == "restart":
+            _ = find_luigi(True)
+            start_luigi(args.port, args.keep, args.retry, True)
         elif args.action == "stop":
-            find_luigi(True)
+            _ = find_luigi(True)
         else:
             raise ValueError("Invalid option")
     else:

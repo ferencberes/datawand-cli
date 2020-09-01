@@ -1,4 +1,4 @@
-import sqlite3, os, time, subprocess, psutil
+import sqlite3, os, time, subprocess, psutil, shutil
 import pandas as pd
 from os.path import expanduser
 from datawandcli.components.objects import Pipeline
@@ -36,9 +36,12 @@ retry-delay=%i
 """ % (luigi_port, remove_sec, retry_sec))
     return luigi_conf
 
-def start_luigi(luigi_port=8082, remove_sec=3600, retry_sec=1800):
+def start_luigi(luigi_port=8082, remove_sec=3600, retry_sec=1800, clear_cache=False):
     luigi_dir = get_luigi_dir()
     if not os.path.exists(luigi_dir):
+        os.makedirs(luigi_dir)
+    elif clear_cache:
+        shutil.rmtree(luigi_dir)
         os.makedirs(luigi_dir)
     log_dir = os.path.join(luigi_dir, "log")
     if not os.path.exists(log_dir):
@@ -49,23 +52,31 @@ def start_luigi(luigi_port=8082, remove_sec=3600, retry_sec=1800):
     luigi_command = "export LUIGI_CONFIG_PATH=%s ; luigid --port=%i --pidfile %s --logdir %s --state-path %s" % (luigi_conf, luigi_port,  pid_file, log_dir, state_file)
     luigi_process = subprocess.Popen(luigi_command, shell=True, executable='/bin/bash')
     time.sleep(1)
+    port = find_luigi(False)
+    print("Scheduler was started on port %s" % port)
     
-def find_luigi(kill):
+def find_luigi(kill, verbose=False):
+    port = None
     success = False
     luigi_dir = get_luigi_dir()
     for p in psutil.process_iter():
         command = ' '.join(p.cmdline())
         if luigi_dir in command:
-            print(command)
+            port = command.split("--port=")[1].split()[0]
+            if verbose:
+                print("Scheduler is running on port %s" % port)
+                print("Scheduler configuration directory: %s" % luigi_dir)
             if kill:
                 p.terminate()
                 p.wait()
             success = True
+            break
     if success:
         if kill:
             print("Scheduler was terminated")
     else:
         print("Scheduler was not found!")
+    return port
 
 ### database ###
 

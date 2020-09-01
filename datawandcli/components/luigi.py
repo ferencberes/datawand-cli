@@ -51,7 +51,7 @@ class PythonScriptTask(BaseTask):
     
 class NotebookTask(BaseTask):
     def execution_command(self, resource_name, namespace):
-        return ["jupyter", "nbconvert", "--ExecutePreprocessor.timeout=-1", "--execute", "--to", "notebook", resource_name, "--output", resource_name, namespace]
+        return ["jupyter", "nbconvert", "--execute", "--ExecutePreprocessor.timeout=-1", "--to", "notebook", resource_name, "--output", resource_name, namespace]
     
 ### Task templates ###
 
