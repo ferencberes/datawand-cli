@@ -1,4 +1,5 @@
 #!/bin/bash
+pushd examples/parameter_handling/
 datawand init --name test_repo
 echo
 datawand list
@@ -9,7 +10,7 @@ datawand copy pipeline1.json pipeline2
 echo
 datawand status
 echo
-datawand add pipeline2.json examples/sample.py
+datawand add pipeline2.json resources/sample.py
 datawand add pipeline2.json apple.ipynb --name Apple
 datawand add pipeline2.json pear.txt --type module
 datawand dependency add pipeline2.json Apple pear
@@ -62,3 +63,4 @@ datawand scheduler stop
 echo
 datawand drop test_repo
 echo "Done"
+popd

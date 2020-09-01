@@ -3,6 +3,8 @@ from datawandcli.parametrization import ConfigGenerator
 from shutil import rmtree
 import subprocess, os
 
+os.chdir("examples/parameter_handling/")
+
 def load_last_line(fp):
     last_line = ""
     with open(fp) as f:
@@ -17,9 +19,9 @@ def check_process(p, fp):
 
 def test_create_pipeline():
     pipe = Pipeline("Trial")
-    mod = Module("examples/my_module.py", name="my_module")
-    nb = Notebook("examples/Sleep.ipynb", name="Sleep")
-    pys = PyScript("examples/sample.py", name="PySample")
+    mod = Module("resources/my_module.py", name="my_module")
+    nb = Notebook("resources/Sleep.ipynb", name="Sleep")
+    pys = PyScript("resources/sample.py", name="PySample")
     pipe.add(mod)
     pipe.add(nb)
     pipe.add(pys)
@@ -103,9 +105,9 @@ def test_demo_1_run():
     assert "Sleep_CLONE_1 task was executed!" in output
 
 def test_demo_1_output():
-    out_1 = load_last_line("experiments/demo_1/examples/PySample_CLONE_1.log")
-    out_2 = load_last_line("experiments/demo_1/examples/PySample_CLONE_2.log")
-    assert os.path.exists("experiments/demo_1/examples/Sleep_CLONE_1.log")
+    out_1 = load_last_line("experiments/demo_1/resources/PySample_CLONE_1.log")
+    out_2 = load_last_line("experiments/demo_1/resources/PySample_CLONE_2.log")
+    assert os.path.exists("experiments/demo_1/resources/Sleep_CLONE_1.log")
     rmtree("experiments/demo_1/")
     assert out_1 == "1.0 0.5 default"
     assert out_2 == "0.0 1.0 default"
@@ -161,10 +163,10 @@ def test_demo_2_run():
     assert "PySample_CLONE_4 task was executed!" in output
 
 def test_demo_2_output():
-    out_1 = load_last_line("experiments/demo_2/examples/PySample_CLONE_1.log")
-    out_2 = load_last_line("experiments/demo_2/examples/PySample_CLONE_2.log")
-    out_3 = load_last_line("experiments/demo_2/examples/PySample_CLONE_3.log")
-    out_4 = load_last_line("experiments/demo_2/examples/PySample_CLONE_4.log")
+    out_1 = load_last_line("experiments/demo_2/resources/PySample_CLONE_1.log")
+    out_2 = load_last_line("experiments/demo_2/resources/PySample_CLONE_2.log")
+    out_3 = load_last_line("experiments/demo_2/resources/PySample_CLONE_3.log")
+    out_4 = load_last_line("experiments/demo_2/resources/PySample_CLONE_4.log")
     rmtree("experiments/demo_2/")
     assert out_1 == "0.1 0.5 default"
     assert out_2 == "0.1 1.0 default"

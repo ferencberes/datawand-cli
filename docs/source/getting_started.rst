@@ -1,7 +1,7 @@
 Getting Started
 ===============
 
-**datawand-cli** can help you managing your Python data science pipelines. Before plunging into coding let's get familiar with our pipeline concept.
+**datawand-cli** can help you managing your Python data science pipelines. Before plunging into the code let's get familiar with our pipeline concept.
 
 Terminology
 -----------
