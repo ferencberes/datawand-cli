@@ -210,6 +210,4 @@ Finally, if you have finished running your experiments then you should stop the 
 .. code-block:: bash
 
    $ datawand scheduler stop
-
-
-
+s
