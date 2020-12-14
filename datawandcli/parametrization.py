@@ -1,7 +1,8 @@
-import os
+import os, time
 from datawandcli.cli.utils import get_luigi_conf
 from datawandcli.components.objects import Pipeline, Configurable, Module, PyScript, Notebook
 from datawandcli.components.luigi import *
+from datawandcli.components.comet import init_experiment, load_api_key
 
 class ParamHelper():
     r"""
@@ -12,15 +13,20 @@ class ParamHelper():
         pipeline_name: Provide the name of your pipeline
         args: sys.argv
     """
-    def __init__(self, base_dir, pipeline_name, args):
+    def __init__(self, base_dir, pipeline_name, args, comet_fp=None, comet_workspace=None, comet_project=None):
+        self._name = None
         self._base_dir = base_dir
         self._pipeline_name = pipeline_name
         self._execution_path = args[0]
         self._load_pipeline()
         self._load_custom_config()
+        self._init_experiment(comet_fp, comet_workspace, comet_project)
         item_config = self.default_config.copy()
         item_config.update(self.custom_config)
         print(item_config)
+        if self.experiment != None:
+            item_config["__name__"] = self._name
+            self.experiment.log_parameters(item_config)
     
     @property
     def base_dir(self):
@@ -58,8 +64,27 @@ class ParamHelper():
             fname = os.path.split(fp)[1]
             if fname == executed_file:
                 conf = obj.config
+                self._name = obj.name
                 break
         self._custom_config = conf
+        
+    def _init_experiment(self, fp=None, workspace=None, project=None):
+        self.experiment = None
+        if fp != None:
+            api_key = load_api_key(fp)
+            if api_key != None:
+                if workspace == None:
+                    workspace = self.pipeline_name
+                if project == None:
+                    project = self._name.split("_CLONE_")[0]
+                self.experiment = init_experiment(api_key, project, workspace)
+        if self.experiment == None:
+            print("Comet API key was not provided properly!")
+    
+    def close(self):
+        if self.experiment != None:
+            self.experiment.end()
+            time.sleep(5)
     
     def get(self, param_id):
         r"""

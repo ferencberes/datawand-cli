@@ -19,6 +19,7 @@ setup(name='datawandcli',
           'jupyter',
           'networkx',
           'matplotlib',
+          'comet_ml'
       ],
       entry_points={
           'console_scripts': ['datawand = datawandcli.cli.main:execute']

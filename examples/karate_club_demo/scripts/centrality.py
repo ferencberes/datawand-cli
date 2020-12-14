@@ -3,7 +3,7 @@ import pandas as pd
 import sys
 from datawandcli.parametrization import ParamHelper
 
-ph = ParamHelper('..', 'GraphDemo', sys.argv)
+ph = ParamHelper('..', 'GraphDemo', sys.argv, comet_fp="../comet_key.txt")
 metric = ph.get("metric")
 
 G = nx.karate_club_graph()
@@ -19,5 +19,7 @@ else:
     raise ValueError("Unsupported centrality score!")
 
 scores_df = pd.DataFrame(scores.items(), columns=["id",metric])
+ph.experiment.log_metric("size",len(scores_df))
 scores_df.to_csv("%s.csv" % metric, index=False)
 print("done")
+ph.close()

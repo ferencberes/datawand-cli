@@ -5,6 +5,7 @@ datawand init --name Demo
 datawand list
 
 datawand create GraphDemo
+datawand add GraphDemo.json comet_key.txt
 datawand add GraphDemo.json scripts/centrality.py
 datawand add GraphDemo.json scripts/correlation.py
 datawand view GraphDemo.json
@@ -23,8 +24,8 @@ datawand scheduler status
 
 datawand run experiments/demo/GraphDemo.json --workers 2
 
-echo "Sleeping for 15 seconds"
-sleep 15
+echo "Sleeping for 30 seconds"
+sleep 30
 
 datawand status
 datawand log experiments/demo/GraphDemo.json --name correlation_CLONE_2 --tail 5
